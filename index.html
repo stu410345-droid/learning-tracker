@@ -4,59 +4,50 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>我的學習歷程追蹤</title>
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
   <div class="max-w-4xl mx-auto p-4 sm:p-6">
-    <!-- 標題區 -->
     <header class="mb-8 text-center sm:text-left">
       <h1 class="text-3xl font-bold text-slate-900 mb-2">📚 個人學習歷程紀錄</h1>
       <p class="text-slate-600">紀錄每天學習的科目與時間，持之以恆看見改變！</p>
     </header>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      
       <!-- 表單區 -->
       <div class="md:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
         <h2 class="text-xl font-semibold mb-4 text-indigo-600">新增學習紀錄</h2>
-        
         <form id="logForm" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">學習日期</label>
             <input type="date" id="date" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
           </div>
-
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">學習科目</label>
             <input type="text" id="subject" placeholder="例如：Python, Apps Script..." required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
           </div>
-
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">學習時間 (分鐘)</label>
             <input type="number" id="duration" min="1" placeholder="例如：60" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
           </div>
-
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">學習內容 / 筆記</label>
-            <textarea id="content" rows="3" placeholder="今天學了什麼具體概念？" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+            <textarea id="content" rows="4" placeholder="輸入今天學習的重點概念..." required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
           </div>
-
-          <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center">
-            <span>儲存紀錄</span>
+          <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors">
+            儲存紀錄
           </button>
         </form>
       </div>
 
-      <!-- 紀錄列表區 -->
+      <!-- 紀錄區 -->
       <div class="md:col-span-2 space-y-4">
         <div class="flex justify-between items-center mb-2">
           <h2 class="text-xl font-semibold text-slate-800">歷史紀錄</h2>
           <button id="reloadBtn" class="text-sm text-indigo-600 hover:underline">重新整理</button>
         </div>
 
-        <!-- 統計小卡片 -->
         <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex justify-around text-center">
           <div>
             <div class="text-xs text-slate-500">總紀錄筆數</div>
@@ -68,134 +59,196 @@
           </div>
         </div>
 
-        <!-- 列表容器 -->
         <div id="logsContainer" class="space-y-3">
           <div class="text-center py-8 text-slate-400">資料讀取中...</div>
         </div>
       </div>
+    </div>
+  </div>
 
+  <!-- 主題總結 Modal 彈窗 -->
+  <div id="summaryModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[85vh] flex flex-col overflow-hidden">
+      <div class="p-5 border-b flex justify-between items-center bg-indigo-50">
+        <h3 id="modalTitle" class="text-xl font-bold text-indigo-900">📋 主題總結</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">✕</button>
+      </div>
+      <div id="modalBody" class="p-6 overflow-y-auto space-y-4">
+        <!-- 動態渲染總結內容 -->
+      </div>
     </div>
   </div>
 
   <script>
-  // 你的學校帳號 Apps Script 網址
-  const API_URL = "https://script.google.com/macros/s/AKfycbxDs3QFrcyHUnnb5Hiwl4B6VdWE-wuRIX-gF6sFIrhi-AF6E8ZGAl70SGMd-YdI5z4krQ/exec";
+    // 請確認為你學校 Apps Script 的網址
+    const API_URL = "https://script.google.com/macros/s/AKfycbyh4qxwiLnmRefevY5wnEDzZgLABsPDVTDGCFE1GXT09tpiCkzdRRakGyInQKAR7wcqjA/exec";
 
-  // 初始化預設日期為今天
-  document.getElementById('date').valueAsDate = new Date();
+    document.getElementById('date').valueAsDate = new Date();
 
-  // 1. 利用 JSONP 讀取資料 (突破學校 CORS 阻擋)
-  function fetchLogs() {
-    const container = document.getElementById('logsContainer');
-    container.innerHTML = `<div class="text-center py-8 text-slate-400">資料讀取中...</div>`;
+    function fetchLogs() {
+      const container = document.getElementById('logsContainer');
+      container.innerHTML = `<div class="text-center py-8 text-slate-400">資料讀取中...</div>`;
 
-    // 全域 CallBack 函式給 JSONP 呼叫
-    window.handleApiResponse = function(result) {
-      if (result && result.status === "success") {
-        renderLogs(result.data);
-      } else {
-        container.innerHTML = `<div class="text-red-500 text-center py-4">讀取失敗：${result ? result.message : '未知錯誤'}</div>`;
+      window.handleApiResponse = function(result) {
+        if (result && result.status === "success") {
+          renderLogs(result.data);
+        } else {
+          container.innerHTML = `<div class="text-red-500 text-center py-4">讀取失敗</div>`;
+        }
+      };
+
+      const oldScript = document.getElementById('jsonpScript');
+      if (oldScript) oldScript.remove();
+
+      const script = document.createElement('script');
+      script.id = 'jsonpScript';
+      script.src = `${API_URL}?callback=handleApiResponse&t=${new Date().getTime()}`;
+      document.body.appendChild(script);
+    }
+
+    function renderLogs(logs) {
+      const container = document.getElementById('logsContainer');
+      const totalLogsEl = document.getElementById('totalLogs');
+      const totalHoursEl = document.getElementById('totalHours');
+
+      if (!logs || logs.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-400">目前沒有紀錄</div>`;
+        totalLogsEl.innerText = "0";
+        totalHoursEl.innerText = "0 小時";
+        return;
       }
-    };
 
-    // 動態建立 <script> 標籤請求資料
-    const oldScript = document.getElementById('jsonpScript');
-    if (oldScript) oldScript.remove();
+      let totalMinutes = 0;
+      const sortedLogs = [...logs].reverse();
 
-    const script = document.createElement('script');
-    script.id = 'jsonpScript';
-    script.src = `${API_URL}?callback=handleApiResponse&t=${new Date().getTime()}`;
-    script.onerror = function() {
-      container.innerHTML = `<div class="text-red-500 text-center py-4">連線失敗，請確認 Apps Script 已更新為最新版本</div>`;
-    };
-    document.body.appendChild(script);
-  }
+      container.innerHTML = sortedLogs.map(log => {
+        totalMinutes += Number(log.duration || 0);
+        const dateStr = log.date ? new Date(log.date).toLocaleDateString("zh-TW") : "無日期";
 
-  // 2. 渲染紀錄與統計
-  function renderLogs(logs) {
-    const container = document.getElementById('logsContainer');
-    const totalLogsEl = document.getElementById('totalLogs');
-    const totalHoursEl = document.getElementById('totalHours');
+        return `
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-start mb-2">
+              <span class="inline-block px-2.5 py-1 bg-indigo-100 text-indigo-700 font-semibold rounded-md text-xs">
+                ${log.subject}
+              </span>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs text-slate-400">${dateStr}</span>
+                <button onclick="getSubjectSummary('${log.subject}')" class="text-xs bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200 font-medium">
+                  📊 生成主題總結
+                </button>
+              </div>
+            </div>
+            <p class="text-slate-700 text-sm mb-2 whitespace-pre-line">${log.content}</p>
+            <div class="text-right text-xs text-slate-500">
+              ⏱️ 學習時間：<span class="font-bold text-slate-800">${log.duration}</span> 分鐘
+            </div>
+          </div>
+        `;
+      }).join('');
 
-    if (!logs || logs.length === 0) {
-      container.innerHTML = `<div class="text-center py-8 text-slate-400">目前還沒有學習紀錄，趕快新增第一筆吧！</div>`;
-      totalLogsEl.innerText = "0";
-      totalHoursEl.innerText = "0 小時";
-      return;
+      totalLogsEl.innerText = logs.length;
+      totalHoursEl.innerText = (totalMinutes / 60).toFixed(1) + " 小時";
     }
 
-    let totalMinutes = 0;
-    const sortedLogs = [...logs].reverse();
+    // 呼叫 JSONP 取得主題總結
+    function getSubjectSummary(subject) {
+      const modal = document.getElementById('summaryModal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalBody = document.getElementById('modalBody');
 
-    container.innerHTML = sortedLogs.map(log => {
-      totalMinutes += Number(log.duration || 0);
-      const dateStr = log.date ? new Date(log.date).toLocaleDateString("zh-TW") : "無日期";
+      modalTitle.innerText = `📋 【${subject}】主題總結報告`;
+      modalBody.innerHTML = `<div class="text-center py-8 text-slate-400">正在分析並彙整筆記...</div>`;
+      modal.classList.remove('hidden');
 
-      return `
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-200 transition-colors">
-          <div class="flex justify-between items-start mb-2">
-            <span class="inline-block px-2.5 py-1 bg-indigo-100 text-indigo-700 font-semibold rounded-md text-xs">
-              ${log.subject}
-            </span>
-            <span class="text-xs text-slate-400">${dateStr}</span>
-          </div>
-          <p class="text-slate-700 text-sm mb-3 whitespace-pre-line">${log.content}</p>
-          <div class="text-right text-xs font-medium text-slate-500">
-            ⏱️ 學習時間：<span class="text-slate-800 font-bold">${log.duration}</span> 分鐘
-          </div>
-        </div>
-      `;
-    }).join('');
+      window.handleSummaryResponse = function(result) {
+        if (result && result.status === "success") {
+          const data = result.summary;
+          
+          let html = `
+            <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border mb-4 text-center">
+              <div>
+                <div class="text-xs text-slate-500">累積總次數</div>
+                <div class="text-xl font-bold text-indigo-600">${data.count} 次</div>
+              </div>
+              <div>
+                <div class="text-xs text-slate-500">累積總時數</div>
+                <div class="text-xl font-bold text-indigo-600">${data.totalHours} 小時</div>
+              </div>
+            </div>
+            <h4 class="font-bold text-slate-800 mb-3 border-l-4 border-indigo-500 pl-2">學習脈絡與筆記整理：</h4>
+            <div class="space-y-3">
+          `;
 
-    totalLogsEl.innerText = logs.length;
-    totalHoursEl.innerText = (totalMinutes / 60).toFixed(1) + " 小時";
-  }
+          data.outline.forEach(item => {
+            html += `
+              <div class="bg-white border rounded-lg p-3 text-sm">
+                <div class="flex justify-between text-xs text-slate-400 mb-1">
+                  <span>第 ${item.step} 階段 • ${item.date}</span>
+                  <span>用時 ${item.duration} 分鐘</span>
+                </div>
+                <div class="text-slate-700 font-medium whitespace-pre-line">${item.content}</div>
+              </div>
+            `;
+          });
 
-  // 3. 送出表單 (POST)
-  document.getElementById('logForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const submitBtn = document.getElementById('submitBtn');
-    submitBtn.disabled = true;
-    submitBtn.innerText = "儲存中...";
+          html += `</div>`;
+          modalBody.innerHTML = html;
+        } else {
+          modalBody.innerHTML = `<div class="text-red-500 text-center">無法產生總結</div>`;
+        }
+      };
 
-    const data = {
-      date: document.getElementById('date').value,
-      subject: document.getElementById('subject').value,
-      duration: document.getElementById('duration').value,
-      content: document.getElementById('content').value
-    };
+      const oldScript = document.getElementById('summaryScript');
+      if (oldScript) oldScript.remove();
 
-    try {
-      await fetch(API_URL, {
-        method: "POST",
-        mode: "no-cors", // 避開學校跨域限制
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify(data)
-      });
-
-      // 清空輸入框
-      document.getElementById('subject').value = '';
-      document.getElementById('duration').value = '';
-      document.getElementById('content').value = '';
-
-      alert("🎉 紀錄已送出！資料寫入中...");
-      
-      // 延遲 1.5 秒後重新讀取，給試算表一點寫入時間
-      setTimeout(fetchLogs, 1500);
-
-    } catch (err) {
-      alert("儲存失敗：" + err.message);
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.innerText = "儲存紀錄";
+      const script = document.createElement('script');
+      script.id = 'summaryScript';
+      script.src = `${API_URL}?action=summary&subject=${encodeURIComponent(subject)}&callback=handleSummaryResponse&t=${new Date().getTime()}`;
+      document.body.appendChild(script);
     }
-  });
 
-  document.getElementById('reloadBtn').addEventListener('click', fetchLogs);
+    function closeModal() {
+      document.getElementById('summaryModal').classList.add('hidden');
+    }
 
-  // 頁面載入時自動讀取
-  fetchLogs();
-</script>
+    // 表單提交 (POST)
+    document.getElementById('logForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = "儲存中...";
+
+      const data = {
+        date: document.getElementById('date').value,
+        subject: document.getElementById('subject').value,
+        duration: document.getElementById('duration').value,
+        content: document.getElementById('content').value
+      };
+
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(data)
+        });
+
+        document.getElementById('subject').value = '';
+        document.getElementById('duration').value = '';
+        document.getElementById('content').value = '';
+
+        alert("🎉 紀錄已成功儲存！");
+        setTimeout(fetchLogs, 1500);
+      } catch (err) {
+        alert("儲存失敗");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "儲存紀錄";
+      }
+    });
+
+    document.getElementById('reloadBtn').addEventListener('click', fetchLogs);
+    fetchLogs();
+  </script>
 </body>
 </html>
