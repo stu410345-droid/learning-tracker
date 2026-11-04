@@ -16,7 +16,7 @@
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
-  <!-- 登入遮罩視窗 (未驗證時強制顯示) -->
+  <!-- 登入遮罩視窗 -->
   <div id="loginModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
     <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4">
       <div class="text-center">
@@ -134,7 +134,7 @@
   </div>
 
   <script>
-    // ⚠️ 請記得確認此處為你 Apps Script 最新部署的 Web 應用程式網址
+    // ⚠️ 填入你的 Apps Script 網址
     const API_URL = "https://script.google.com/macros/s/AKfycbyGp5SXGlgZXysFijKsKsQSTZsNMeXiOkvu18_1AYfRgJm8VYmhhbEpmV-b4MxnWY-P/exec";
 
     let currentUser = localStorage.getItem('tracker_user') || '';
@@ -143,14 +143,12 @@
 
     document.getElementById('date').valueAsDate = new Date();
 
-    // 初始化檢查登入狀態
     if (currentUser && currentPin) {
       document.getElementById('loginModal').classList.add('hidden');
       document.getElementById('currentUserSpan').innerText = currentUser;
       fetchLogs();
     }
 
-    // 登入表單觸發
     document.getElementById('loginForm').addEventListener('submit', (e) => {
       e.preventDefault();
       currentUser = document.getElementById('loginUser').value.trim();
@@ -181,7 +179,6 @@
       document.getElementById('totalHours').innerText = "0 小時";
     }
 
-    // 利用 JSONP 向 Apps Script 發送姓名與 PIN 碼請求專屬資料
     function fetchLogs() {
       if (!currentUser || !currentPin) return;
 
@@ -231,7 +228,12 @@
               <span class="inline-block px-2.5 py-1 bg-indigo-100 text-indigo-700 font-bold rounded-md text-xs">
                 ${log.subject}
               </span>
-              <span class="text-xs text-slate-400">${dateStr}</span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-400">${dateStr}</span>
+                <button onclick="deleteLog('${log.id}')" class="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-0.5 rounded transition-colors font-medium">
+                  🗑️ 刪除
+                </button>
+              </div>
             </div>
             <p class="text-slate-700 text-sm mb-2 whitespace-pre-line">${log.content}</p>
             <div class="text-right text-xs text-slate-500">
@@ -243,6 +245,32 @@
 
       totalLogsEl.innerText = userLogs.length + " 筆";
       totalHoursEl.innerText = (totalMinutes / 60).toFixed(1) + " 小時";
+    }
+
+    // 刪除紀錄函式
+    async function deleteLog(logId) {
+      if (!confirm("確定要刪除這筆學習紀錄嗎？刪除後無法復原。")) return;
+
+      const data = {
+        action: "delete",
+        id: logId,
+        userName: currentUser,
+        pinCode: currentPin
+      };
+
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(data)
+        });
+
+        alert("🗑️ 紀錄已成功刪除！");
+        setTimeout(fetchLogs, 1500);
+      } catch (err) {
+        alert("刪除失敗，請再試一次");
+      }
     }
 
     function generatePDFReport() {
@@ -317,7 +345,6 @@
       document.getElementById('reportModal').classList.add('hidden');
     }
 
-    // 新增紀錄 (POST)
     document.getElementById('logForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const submitBtn = document.getElementById('submitBtn');
