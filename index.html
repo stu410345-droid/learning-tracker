@@ -16,8 +16,32 @@
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
+  <!-- 登入遮罩視窗 (未驗證時強制顯示) -->
+  <div id="loginModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4">
+      <div class="text-center">
+        <h2 class="text-2xl font-bold text-slate-900 mb-1">🔐 個人學習歷程登入</h2>
+        <p class="text-xs text-slate-500">輸入您的姓名與通行碼以解鎖您的專屬紀錄</p>
+      </div>
+      
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">您的姓名 / 暱稱</label>
+          <input type="text" id="loginUser" required placeholder="例如：張小明" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">個人通行碼 (PIN Code)</label>
+          <input type="password" id="loginPin" required placeholder="設定 4 位以上數字或密碼" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg shadow transition-colors">
+          進入我的學習空間
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 主系統介面 -->
   <div class="max-w-4xl mx-auto p-4 sm:p-6">
-    <!-- 頁頭與使用者切換區 -->
     <header class="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
@@ -26,19 +50,16 @@
         <p class="text-xs text-slate-500 mt-1">紀錄每日學習，自動生成專屬學習歷程報告與時間軸</p>
       </div>
 
-      <div class="flex items-center gap-2 bg-indigo-50 p-2 rounded-xl border border-indigo-100 w-full sm:w-auto">
-        <span class="text-xs font-bold text-indigo-700 whitespace-nowrap pl-1">👤 目前學習者：</span>
-        <select id="userSelect" onchange="switchUser()" class="bg-white text-slate-800 text-sm font-semibold rounded-lg px-3 py-1.5 border border-indigo-200 outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-auto">
-          <!-- 動態載入使用者 -->
-        </select>
-        <button onclick="addNewUser()" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-2.5 py-1.5 rounded-lg whitespace-nowrap">
-          + 新增
+      <div class="flex items-center gap-3 bg-indigo-50 px-3 py-2 rounded-xl border border-indigo-100">
+        <span class="text-xs font-bold text-indigo-700">👤 目前使用者：<span id="currentUserSpan" class="text-indigo-900 font-extrabold">未登入</span></span>
+        <button onclick="logout()" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-2 py-1 rounded-md">
+          登出 / 切換
         </button>
       </div>
     </header>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- 左側：新增紀錄表單 -->
+      <!-- 新增紀錄表單 -->
       <div class="md:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 h-fit">
         <h2 class="text-lg font-semibold mb-4 text-indigo-600 flex items-center gap-1.5">
           ✍️ 新增學習紀錄
@@ -50,7 +71,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">學習科目 / 主題</label>
-            <input type="text" id="subject" placeholder="例如：Python, Apps Script" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            <input type="text" id="subject" placeholder="例如：Python, 英文" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">學習時間 (分鐘)</label>
@@ -58,7 +79,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">學習內容 / 筆記重點</label>
-            <textarea id="content" rows="4" placeholder="今天學到了什麼概念、解決了什麼問題？" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+            <textarea id="content" rows="4" placeholder="今天學到了什麼概念？" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
           </div>
           <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-colors shadow-sm">
             儲存紀錄
@@ -66,9 +87,8 @@
         </form>
       </div>
 
-      <!-- 右側：歷史紀錄與報告生成按鈕 -->
+      <!-- 右側紀錄區 -->
       <div class="md:col-span-2 space-y-4">
-        <!-- 數據統計與匯出報告頂欄 -->
         <div class="bg-indigo-600 text-white p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
           <div class="flex gap-6 text-center sm:text-left">
             <div>
@@ -80,92 +100,100 @@
               <div id="totalHours" class="text-2xl font-black">0 小時</div>
             </div>
           </div>
-          <button onclick="generatePDFReport()" class="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm">
+          <button onclick="generatePDFReport()" class="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2.5 rounded-xl shadow-md transition-all text-sm">
             📄 生成學習歷程報告 (PDF)
           </button>
         </div>
 
         <div class="flex justify-between items-center px-1">
-          <h2 id="historyTitle" class="text-lg font-bold text-slate-800">學習紀錄脈絡</h2>
+          <h2 class="text-lg font-bold text-slate-800">我的學習紀錄脈絡</h2>
           <button id="reloadBtn" class="text-xs text-indigo-600 hover:underline">重新整理</button>
         </div>
 
         <div id="logsContainer" class="space-y-3">
-          <div class="text-center py-8 text-slate-400">資料讀取中...</div>
+          <div class="text-center py-8 text-slate-400">請先登入驗證身分...</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- PDF 報告與學習脈絡視窗 Modal -->
+  <!-- PDF 報告 Modal -->
   <div id="reportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
-      <!-- 視窗控制列 (不列印) -->
       <div class="p-4 bg-slate-800 text-white flex justify-between items-center no-print">
-        <span class="text-sm font-semibold">📄 學習歷程成果報告預覽</span>
+        <span class="text-sm font-semibold">📄 個人學習歷程報告</span>
         <div class="flex gap-2">
-          <button onclick="window.print()" class="bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1">
+          <button onclick="window.print()" class="bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">
             🖨️ 列印 / 另存 PDF
           </button>
           <button onclick="closeReportModal()" class="text-slate-400 hover:text-white font-bold px-2">✕</button>
         </div>
       </div>
-
-      <!-- 可列印區塊 -->
-      <div id="printableReport" class="p-8 overflow-y-auto space-y-6">
-        <!-- 動態產生的報告內容 -->
-      </div>
+      <div id="printableReport" class="p-8 overflow-y-auto space-y-6"></div>
     </div>
   </div>
 
   <script>
-    // ⚠️ 請填入你學校帳號部署的 Apps Script 網址
-    const API_URL = "https://script.google.com/macros/s/AKfycbzDo8hgjO55FZ1LeWypzOYO7hm0bDIrAl9d-fPYmpVuyOHDC7iTq1-afmjNqgcpuYqs2Q/exec";
+    // ⚠️ 請記得確認此處為你 Apps Script 最新部署的 Web 應用程式網址
+    const API_URL = "https://script.google.com/macros/s/AKfycbyGp5SXGlgZXysFijKsKsQSTZsNMeXiOkvu18_1AYfRgJm8VYmhhbEpmV-b4MxnWY-P/exec";
 
-    let allLogs = [];
-    let users = JSON.parse(localStorage.getItem('tracker_users')) || ["預設使用者"];
-    let currentUser = localStorage.getItem('tracker_current_user') || users[0];
+    let currentUser = localStorage.getItem('tracker_user') || '';
+    let currentPin = localStorage.getItem('tracker_pin') || '';
+    let userLogs = [];
 
     document.getElementById('date').valueAsDate = new Date();
 
-    // 初始化使用者選單
-    function initUserDropdown() {
-      const select = document.getElementById('userSelect');
-      select.innerHTML = users.map(u => `<option value="${u}" ${u === currentUser ? 'selected' : ''}>${u}</option>`).join('');
+    // 初始化檢查登入狀態
+    if (currentUser && currentPin) {
+      document.getElementById('loginModal').classList.add('hidden');
+      document.getElementById('currentUserSpan').innerText = currentUser;
+      fetchLogs();
     }
 
-    function switchUser() {
-      currentUser = document.getElementById('userSelect').value;
-      localStorage.setItem('tracker_current_user', currentUser);
-      renderUserLogs();
-    }
+    // 登入表單觸發
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      currentUser = document.getElementById('loginUser').value.trim();
+      currentPin = document.getElementById('loginPin').value.trim();
 
-    function addNewUser() {
-      const name = prompt("請輸入新學習者的姓名或暱稱：");
-      if (name && name.trim()) {
-        const cleanName = name.trim();
-        if (!users.includes(cleanName)) {
-          users.push(cleanName);
-          localStorage.setItem('tracker_users', JSON.stringify(users));
-        }
-        currentUser = cleanName;
-        localStorage.setItem('tracker_current_user', currentUser);
-        initUserDropdown();
-        renderUserLogs();
+      if (!currentUser || !currentPin) {
+        alert("請輸入姓名與通行碼");
+        return;
       }
+
+      localStorage.setItem('tracker_user', currentUser);
+      localStorage.setItem('tracker_pin', currentPin);
+
+      document.getElementById('currentUserSpan').innerText = currentUser;
+      document.getElementById('loginModal').classList.add('hidden');
+      fetchLogs();
+    });
+
+    function logout() {
+      localStorage.removeItem('tracker_user');
+      localStorage.removeItem('tracker_pin');
+      currentUser = '';
+      currentPin = '';
+      document.getElementById('currentUserSpan').innerText = "未登入";
+      document.getElementById('loginModal').classList.remove('hidden');
+      document.getElementById('logsContainer').innerHTML = `<div class="text-center py-8 text-slate-400">請先登入驗證身分...</div>`;
+      document.getElementById('totalLogs').innerText = "0 筆";
+      document.getElementById('totalHours').innerText = "0 小時";
     }
 
-    // JSONP 讀取所有資料
+    // 利用 JSONP 向 Apps Script 發送姓名與 PIN 碼請求專屬資料
     function fetchLogs() {
+      if (!currentUser || !currentPin) return;
+
       const container = document.getElementById('logsContainer');
-      container.innerHTML = `<div class="text-center py-8 text-slate-400">連線讀取中...</div>`;
+      container.innerHTML = `<div class="text-center py-8 text-slate-400">正在驗證並載入【${currentUser}】的個人紀錄...</div>`;
 
       window.handleApiResponse = function(result) {
         if (result && result.status === "success") {
-          allLogs = result.data || [];
+          userLogs = result.data || [];
           renderUserLogs();
         } else {
-          container.innerHTML = `<div class="text-red-500 text-center py-4">讀取失敗</div>`;
+          container.innerHTML = `<div class="text-red-500 text-center py-4">連線或驗證失敗</div>`;
         }
       };
 
@@ -174,21 +202,17 @@
 
       const script = document.createElement('script');
       script.id = 'jsonpScript';
-      script.src = `${API_URL}?callback=handleApiResponse&t=${new Date().getTime()}`;
+      script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&t=${new Date().getTime()}`;
       document.body.appendChild(script);
     }
 
-    // 渲染「當前使用者」的歷史紀錄
     function renderUserLogs() {
       const container = document.getElementById('logsContainer');
       const totalLogsEl = document.getElementById('totalLogs');
       const totalHoursEl = document.getElementById('totalHours');
 
-      // 依使用者過濾
-      const userLogs = allLogs.filter(log => (log.userName || "預設使用者") === currentUser);
-
       if (userLogs.length === 0) {
-        container.innerHTML = `<div class="text-center py-8 text-slate-400">【${currentUser}】目前尚無學習紀錄，請新增第一筆吧！</div>`;
+        container.innerHTML = `<div class="text-center py-8 text-slate-400">您目前尚無學習紀錄，請新增第一筆吧！</div>`;
         totalLogsEl.innerText = "0 筆";
         totalHoursEl.innerText = "0 小時";
         return;
@@ -221,19 +245,13 @@
       totalHoursEl.innerText = (totalMinutes / 60).toFixed(1) + " 小時";
     }
 
-    // 生成 PDF / 實體學習歷程報告 Modal
     function generatePDFReport() {
-      const userLogs = allLogs.filter(log => (log.userName || "預設使用者") === currentUser);
-
       if (userLogs.length === 0) {
         alert("目前尚無學習紀錄可生成報告！");
         return;
       }
 
-      // 按日期從舊到新排序 (符合總複習學習時間軸)
       const sortedLogs = [...userLogs].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-      // 統計各科目時數與比例
       const subjectStats = {};
       let totalMinutes = 0;
 
@@ -269,8 +287,7 @@
         `;
       }).join('');
 
-      const reportContainer = document.getElementById('printableReport');
-      reportContainer.innerHTML = `
+      document.getElementById('printableReport').innerHTML = `
         <div class="border-b-2 border-indigo-600 pb-4 mb-6 flex justify-between items-end">
           <div>
             <h1 class="text-2xl font-black text-slate-900">自主學習歷程與總複習成果報告</h1>
@@ -284,20 +301,12 @@
 
         <div class="mb-6">
           <h3 class="text-sm font-bold text-slate-700 mb-3">📊 科目學習時間分配摘要</h3>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            ${subjectHtml}
-          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${subjectHtml}</div>
         </div>
 
         <div>
           <h3 class="text-sm font-bold text-slate-700 mb-3">📌 按時間軸排定之單元學習與複習脈絡</h3>
-          <div class="space-y-3">
-            ${timelineHtml}
-          </div>
-        </div>
-
-        <div class="mt-8 pt-4 border-t text-center text-xs text-slate-400">
-          本報告由個人自主學習歷程系統自動整理產出
+          <div class="space-y-3">${timelineHtml}</div>
         </div>
       `;
 
@@ -308,7 +317,7 @@
       document.getElementById('reportModal').classList.add('hidden');
     }
 
-    // 提交表單 (POST)
+    // 新增紀錄 (POST)
     document.getElementById('logForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const submitBtn = document.getElementById('submitBtn');
@@ -320,7 +329,8 @@
         subject: document.getElementById('subject').value,
         duration: document.getElementById('duration').value,
         content: document.getElementById('content').value,
-        userName: currentUser
+        userName: currentUser,
+        pinCode: currentPin
       };
 
       try {
@@ -335,10 +345,10 @@
         document.getElementById('duration').value = '';
         document.getElementById('content').value = '';
 
-        alert(`🎉 紀錄已為【${currentUser}】成功儲存！`);
+        alert(`🎉 紀錄已成功為【${currentUser}】儲存！`);
         setTimeout(fetchLogs, 1500);
       } catch (err) {
-        alert("儲存失敗，請重試");
+        alert("儲存失敗，請再試一次");
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerText = "儲存紀錄";
@@ -346,10 +356,6 @@
     });
 
     document.getElementById('reloadBtn').addEventListener('click', fetchLogs);
-
-    // 頁面初始化
-    initUserDropdown();
-    fetchLogs();
   </script>
 </body>
 </html>
