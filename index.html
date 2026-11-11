@@ -70,9 +70,16 @@
             <label class="block text-xs font-bold text-slate-600 mb-1">學習科目 / 主題</label>
             <input type="text" id="subject" placeholder="例如：Python, 英文" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
           </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">學習時間 (分鐘)</label>
-            <input type="number" id="duration" min="1" placeholder="例如：60" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">學習時間 (分鐘)</label>
+              <input type="number" id="duration" min="1" placeholder="例如：60" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+            <div>
+              <!-- ✨ 新增：成績分數欄位 -->
+              <label class="block text-xs font-bold text-slate-600 mb-1">小考/評量分數 (選填)</label>
+              <input type="number" id="score" min="0" max="100" placeholder="例如：85" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
           </div>
           <div>
             <div class="flex justify-between items-center mb-1">
@@ -94,10 +101,10 @@
 
       <!-- 右側資料區 -->
       <div class="md:col-span-2 space-y-4">
-        <!-- 頂部數據與目標進度條卡片 -->
+        <!-- 頂部數據看板 -->
         <div class="bg-indigo-600 text-white p-5 rounded-2xl shadow-sm space-y-4">
           <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex gap-6 text-center sm:text-left">
+            <div class="flex gap-5 text-center sm:text-left">
               <div>
                 <div class="text-xs text-indigo-200">個人總筆記</div>
                 <div id="totalLogs" class="text-2xl font-black">0 筆</div>
@@ -105,6 +112,11 @@
               <div>
                 <div class="text-xs text-indigo-200">累積學習時數</div>
                 <div id="totalHours" class="text-2xl font-black">0 小時</div>
+              </div>
+              <div>
+                <!-- ✨ 新增：平均成績顯示 -->
+                <div class="text-xs text-indigo-200">平均評量分數</div>
+                <div id="avgScore" class="text-2xl font-black text-amber-300">-- 分</div>
               </div>
             </div>
             <button onclick="openExportModal()" class="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2.5 rounded-xl shadow-md transition-all text-sm">📄 自訂生成學習歷程報告</button>
@@ -170,9 +182,16 @@
           <label class="block text-xs font-bold text-slate-600 mb-1">學習科目 / 主題</label>
           <input type="text" id="editSubject" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">學習時間 (分鐘)</label>
-          <input type="number" id="editDuration" min="1" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">學習時間 (分鐘)</label>
+            <input type="number" id="editDuration" min="1" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+          <div>
+            <!-- ✨ 編輯彈窗的成績欄位 -->
+            <label class="block text-xs font-bold text-slate-600 mb-1">小考/評量分數 (選填)</label>
+            <input type="number" id="editScore" min="0" max="100" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
         </div>
         <div>
           <div class="flex justify-between items-center mb-1">
@@ -366,6 +385,7 @@
       document.getElementById('logsContainer').innerHTML = `<div class="text-center py-8 text-slate-400">請先登入驗證身分...</div>`;
       document.getElementById('totalLogs').innerText = "0 筆";
       document.getElementById('totalHours').innerText = "0 小時";
+      document.getElementById('avgScore').innerText = "-- 分";
       if (myChart) myChart.destroy();
     }
 
@@ -381,7 +401,7 @@
           renderSubjectTabs();
           renderUserLogs();
           renderChart();
-          updateGoalProgress(); // 強制更新進度條
+          updateGoalProgress();
         } else {
           alert("驗證失敗：帳號或通行碼不正確！");
           logout();
@@ -393,14 +413,12 @@
 
       const script = document.createElement('script');
       script.id = 'jsonpScript';
-      script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&v=3&t=${Date.now()}`;
+      script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&v=4&t=${Date.now()}`;
       document.body.appendChild(script);
     }
 
-    // ✨ 防爆型超強相容：精準計算近 7 天學習時數與更新進度條
     function updateGoalProgress() {
       const goalHours = parseFloat(document.getElementById('weeklyGoalInput').value) || 10;
-      
       const now = new Date();
       const sevenDaysAgoTime = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).getTime();
       
@@ -409,7 +427,6 @@
       userLogs.forEach(log => {
         if (log.date) {
           let logTime = 0;
-
           if (typeof log.date === 'string') {
             let cleanDateStr = log.date.split('T')[0].replace(/-/g, '/');
             logTime = new Date(cleanDateStr).getTime();
@@ -467,6 +484,7 @@
       const container = document.getElementById('logsContainer');
       const totalLogsEl = document.getElementById('totalLogs');
       const totalHoursEl = document.getElementById('totalHours');
+      const avgScoreEl = document.getElementById('avgScore');
       const titleEl = document.getElementById('currentViewTitle');
 
       const filteredLogs = activeSubject === 'ALL' ? userLogs : userLogs.filter(log => log.subject === activeSubject);
@@ -479,20 +497,33 @@
       }
 
       let totalMinutes = 0;
-      userLogs.forEach(l => totalMinutes += Number(l.duration || 0));
+      let scoreSum = 0;
+      let scoreCount = 0;
+
+      userLogs.forEach(l => {
+        totalMinutes += Number(l.duration || 0);
+        if (l.score !== undefined && l.score !== "" && !isNaN(Number(l.score))) {
+          scoreSum += Number(l.score);
+          scoreCount++;
+        }
+      });
 
       const sortedLogs = [...filteredLogs].reverse();
 
       container.innerHTML = sortedLogs.map(log => {
         const dateStr = log.date ? new Date(log.date).toLocaleDateString("zh-TW") : "無日期";
         const imgTag = log.imageUrl ? `<img src="${log.imageUrl}" alt="成果照片" class="mt-2 rounded-lg max-h-48 object-cover border border-slate-200">` : '';
+        const scoreBadge = (log.score !== undefined && log.score !== "") ? `<span class="inline-block bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-xs">💯 成績：${log.score} 分</span>` : '';
 
         return `
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <div class="flex justify-between items-start mb-2">
-              <span class="inline-block px-2.5 py-1 bg-indigo-100 text-indigo-700 font-bold rounded-md text-xs">
-                ${log.subject}
-              </span>
+              <div class="flex items-center gap-2">
+                <span class="inline-block px-2.5 py-1 bg-indigo-100 text-indigo-700 font-bold rounded-md text-xs">
+                  ${log.subject}
+                </span>
+                ${scoreBadge}
+              </div>
               <div class="flex items-center gap-2">
                 <span class="text-xs text-slate-400">${dateStr}</span>
                 <button onclick="openEditModal('${log.id}')" class="text-xs text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 px-2 py-0.5 rounded transition-colors font-medium">
@@ -514,6 +545,7 @@
 
       totalLogsEl.innerText = userLogs.length + " 筆";
       totalHoursEl.innerText = (totalMinutes / 60).toFixed(1) + " 小時";
+      avgScoreEl.innerText = scoreCount > 0 ? (scoreSum / scoreCount).toFixed(1) + " 分" : "-- 分";
     }
 
     function openEditModal(logId) {
@@ -524,6 +556,7 @@
       document.getElementById('editDate').value = log.date ? log.date.split('T')[0] : '';
       document.getElementById('editSubject').value = log.subject || '';
       document.getElementById('editDuration').value = log.duration || '';
+      document.getElementById('editScore').value = log.score !== undefined ? log.score : '';
       document.getElementById('editContent').value = log.content || '';
       document.getElementById('editImageUrl').value = log.imageUrl || '';
 
@@ -551,6 +584,7 @@
             date: document.getElementById('editDate').value,
             subject: document.getElementById('editSubject').value,
             duration: document.getElementById('editDuration').value,
+            score: document.getElementById('editScore').value,
             content: document.getElementById('editContent').value,
             imageUrl: document.getElementById('editImageUrl').value.trim(),
             userName: currentUser,
@@ -673,13 +707,14 @@
       let timelineHtml = sortedLogs.map((log, index) => {
         const dateStr = log.date ? new Date(log.date).toLocaleDateString("zh-TW") : "無日期";
         const imgTag = log.imageUrl ? `<img src="${log.imageUrl}" class="mt-2 rounded-lg max-h-40 border border-slate-200">` : '';
+        const scoreStr = (log.score !== undefined && log.score !== "") ? ` | 評量成績：<span class="font-bold text-amber-600">${log.score}分</span>` : '';
 
         return `
           <div class="border-l-2 border-indigo-400 pl-4 py-2 relative">
             <div class="absolute -left-[5px] top-3.5 w-2 h-2 rounded-full bg-indigo-600"></div>
             <div class="flex justify-between items-center text-xs text-slate-400 mb-1">
               <span class="font-bold text-indigo-700">第 ${index + 1} 階段 • ${dateStr}</span>
-              <span>${log.subject} (${log.duration} 分鐘)</span>
+              <span>${log.subject} (${log.duration} 分鐘${scoreStr})</span>
             </div>
             <div class="text-sm font-medium text-slate-800 whitespace-pre-line bg-slate-50 p-3 rounded-lg border border-slate-100">
               ${log.content}
@@ -751,6 +786,7 @@
             date: document.getElementById('date').value,
             subject: document.getElementById('subject').value,
             duration: document.getElementById('duration').value,
+            score: document.getElementById('score').value,
             content: document.getElementById('content').value,
             imageUrl: document.getElementById('imageUrl').value.trim(),
             userName: currentUser,
@@ -760,6 +796,7 @@
 
         document.getElementById('subject').value = '';
         document.getElementById('duration').value = '';
+        document.getElementById('score').value = '';
         document.getElementById('content').value = '';
         document.getElementById('imageUrl').value = '';
 
