@@ -75,7 +75,6 @@
             <input type="number" id="duration" min="1" placeholder="例如：60" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
           </div>
           <div>
-            <!-- ✨ 新增：引導式範本按鈕區 -->
             <div class="flex justify-between items-center mb-1">
               <label class="block text-xs font-bold text-slate-600">學習內容 / 筆記重點</label>
               <button type="button" onclick="applyTemplate('new')" class="text-[11px] text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition-colors font-semibold">
@@ -95,18 +94,36 @@
 
       <!-- 右側資料區 -->
       <div class="md:col-span-2 space-y-4">
-        <div class="bg-indigo-600 text-white p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div class="flex gap-6 text-center sm:text-left">
-            <div>
-              <div class="text-xs text-indigo-200">個人總筆記</div>
-              <div id="totalLogs" class="text-2xl font-black">0 筆</div>
+        <!-- 頂部數據與目標進度條卡片 -->
+        <div class="bg-indigo-600 text-white p-5 rounded-2xl shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex gap-6 text-center sm:text-left">
+              <div>
+                <div class="text-xs text-indigo-200">個人總筆記</div>
+                <div id="totalLogs" class="text-2xl font-black">0 筆</div>
+              </div>
+              <div>
+                <div class="text-xs text-indigo-200">累積學習時數</div>
+                <div id="totalHours" class="text-2xl font-black">0 小時</div>
+              </div>
             </div>
-            <div>
-              <div class="text-xs text-indigo-200">累積學習時數</div>
-              <div id="totalHours" class="text-2xl font-black">0 小時</div>
+            <button onclick="openExportModal()" class="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2.5 rounded-xl shadow-md transition-all text-sm">📄 自訂生成學習歷程報告</button>
+          </div>
+
+          <!-- ✨ 新增：每週目標與動態進度條區塊 -->
+          <div class="bg-indigo-700/60 p-3.5 rounded-xl border border-indigo-500/40 space-y-2">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold flex items-center gap-1.5">
+                🎯 每週學習目標：
+                <input type="number" id="weeklyGoalInput" value="10" min="1" onchange="updateGoalProgress()" class="w-14 px-1.5 py-0.5 rounded text-slate-900 font-bold text-center border-none outline-none">
+                小時
+              </span>
+              <span id="goalTextStatus" class="font-bold text-amber-300">目前 0.0 / 10 小時 (0%)</span>
+            </div>
+            <div class="w-full bg-indigo-950/50 rounded-full h-3 overflow-hidden p-0.5 border border-indigo-400/30">
+              <div id="goalProgressBar" class="bg-amber-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
             </div>
           </div>
-          <button onclick="openExportModal()" class="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2.5 rounded-xl shadow-md transition-all text-sm">📄 自訂生成學習歷程報告</button>
         </div>
 
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -158,7 +175,6 @@
           <input type="number" id="editDuration" min="1" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
         <div>
-          <!-- ✨ 編輯彈窗中的引導範本按鈕 -->
           <div class="flex justify-between items-center mb-1">
             <label class="block text-xs font-bold text-slate-600">學習內容 / 筆記重點</label>
             <button type="button" onclick="applyTemplate('edit')" class="text-[11px] text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition-colors font-semibold">
@@ -231,7 +247,6 @@
     let activeSubject = 'ALL';
     let myChart = null;
 
-    // ✨ 引導範本預設內容
     const GUIDED_TEMPLATE = 
 `【學習目標】
 • 
@@ -256,7 +271,6 @@
       sessionStorage.removeItem('new_registered_pin');
     }
 
-    // ✨ 套用範本函數
     function applyTemplate(target) {
       const fieldId = target === 'edit' ? 'editContent' : 'content';
       const field = document.getElementById(fieldId);
@@ -367,6 +381,7 @@
           renderSubjectTabs();
           renderUserLogs();
           renderChart();
+          updateGoalProgress(); // 更新每週進度條
         } else {
           alert("驗證失敗：帳號或通行碼不正確！");
           logout();
@@ -380,6 +395,43 @@
       script.id = 'jsonpScript';
       script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&t=${new Date().getTime()}`;
       document.body.appendChild(script);
+    }
+
+    // ✨ 計算每週目標與更新進度條
+    function updateGoalProgress() {
+      const goalHours = parseFloat(document.getElementById('weeklyGoalInput').value) || 10;
+      
+      // 計算最近 7 天內的總學習時數
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+      
+      let weeklyMinutes = 0;
+      userLogs.forEach(log => {
+        if (log.date) {
+          const logDate = new Date(log.date);
+          if (logDate >= sevenDaysAgo) {
+            weeklyMinutes += Number(log.duration || 0);
+          }
+        }
+      });
+
+      const weeklyHours = (weeklyMinutes / 60).toFixed(1);
+      let percent = Math.min(Math.round((weeklyHours / goalHours) * 100), 100);
+
+      const statusEl = document.getElementById('goalTextStatus');
+      const barEl = document.getElementById('goalProgressBar');
+
+      if (weeklyHours >= goalHours) {
+        statusEl.innerHTML = `🔥 已達成 ${weeklyHours} / ${goalHours} 小時 (${percent}%) 🎉`;
+        statusEl.className = "font-bold text-emerald-300";
+        barEl.className = "bg-emerald-400 h-full rounded-full transition-all duration-500 shadow-sm";
+      } else {
+        statusEl.innerHTML = `近 7 天：${weeklyHours} / ${goalHours} 小時 (${percent}%)`;
+        statusEl.className = "font-bold text-amber-300";
+        barEl.className = "bg-amber-400 h-full rounded-full transition-all duration-500 shadow-sm";
+      }
+
+      barEl.style.width = percent + "%";
     }
 
     function renderSubjectTabs() {
