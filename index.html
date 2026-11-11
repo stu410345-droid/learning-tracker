@@ -110,7 +110,7 @@
             <button onclick="openExportModal()" class="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2.5 rounded-xl shadow-md transition-all text-sm">📄 自訂生成學習歷程報告</button>
           </div>
 
-          <!-- ✨ 新增：每週目標與動態進度條區塊 -->
+          <!-- 每週目標與動態進度條區塊 -->
           <div class="bg-indigo-700/60 p-3.5 rounded-xl border border-indigo-500/40 space-y-2">
             <div class="flex justify-between items-center text-xs">
               <span class="font-bold flex items-center gap-1.5">
@@ -118,7 +118,7 @@
                 <input type="number" id="weeklyGoalInput" value="10" min="1" onchange="updateGoalProgress()" class="w-14 px-1.5 py-0.5 rounded text-slate-900 font-bold text-center border-none outline-none">
                 小時
               </span>
-              <span id="goalTextStatus" class="font-bold text-amber-300">目前 0.0 / 10 小時 (0%)</span>
+              <span id="goalTextStatus" class="font-bold text-amber-300">近 7 天：0.0 / 10 小時 (0%)</span>
             </div>
             <div class="w-full bg-indigo-950/50 rounded-full h-3 overflow-hidden p-0.5 border border-indigo-400/30">
               <div id="goalProgressBar" class="bg-amber-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
@@ -381,7 +381,7 @@
           renderSubjectTabs();
           renderUserLogs();
           renderChart();
-          updateGoalProgress(); // 更新每週進度條
+          updateGoalProgress(); // 精準更新每週時數進度
         } else {
           alert("驗證失敗：帳號或通行碼不正確！");
           logout();
@@ -397,20 +397,23 @@
       document.body.appendChild(script);
     }
 
-    // ✨ 計算每週目標與更新進度條
+    // ✨ 精準計算近 7 天學習時數與更新進度條
     function updateGoalProgress() {
       const goalHours = parseFloat(document.getElementById('weeklyGoalInput').value) || 10;
       
-      // 計算最近 7 天內的總學習時數
-      const now = new Date();
-      const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const sevenDaysAgo = new Date(today.getTime() - (7 * 24 * 60 * 60 * 1000));
       
       let weeklyMinutes = 0;
       userLogs.forEach(log => {
         if (log.date) {
-          const logDate = new Date(log.date);
-          if (logDate >= sevenDaysAgo) {
-            weeklyMinutes += Number(log.duration || 0);
+          let dateParts = String(log.date).split('T')[0].split('-');
+          if (dateParts.length === 3) {
+            let logDate = new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2]));
+            if (logDate >= sevenDaysAgo) {
+              weeklyMinutes += Number(log.duration || 0);
+            }
           }
         }
       });
@@ -421,7 +424,7 @@
       const statusEl = document.getElementById('goalTextStatus');
       const barEl = document.getElementById('goalProgressBar');
 
-      if (weeklyHours >= goalHours) {
+      if (Number(weeklyHours) >= goalHours) {
         statusEl.innerHTML = `🔥 已達成 ${weeklyHours} / ${goalHours} 小時 (${percent}%) 🎉`;
         statusEl.className = "font-bold text-emerald-300";
         barEl.className = "bg-emerald-400 h-full rounded-full transition-all duration-500 shadow-sm";
