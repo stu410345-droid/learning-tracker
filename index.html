@@ -381,7 +381,7 @@
           renderSubjectTabs();
           renderUserLogs();
           renderChart();
-          updateGoalProgress(); // 精準更新每週時數進度
+          updateGoalProgress(); // 強制更新進度條
         } else {
           alert("驗證失敗：帳號或通行碼不正確！");
           logout();
@@ -393,27 +393,32 @@
 
       const script = document.createElement('script');
       script.id = 'jsonpScript';
-      script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&t=${new Date().getTime()}`;
+      script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&v=3&t=${Date.now()}`;
       document.body.appendChild(script);
     }
 
-    // ✨ 精準計算近 7 天學習時數與更新進度條
+    // ✨ 防爆型超強相容：精準計算近 7 天學習時數與更新進度條
     function updateGoalProgress() {
       const goalHours = parseFloat(document.getElementById('weeklyGoalInput').value) || 10;
       
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const sevenDaysAgo = new Date(today.getTime() - (7 * 24 * 60 * 60 * 1000));
+      const now = new Date();
+      const sevenDaysAgoTime = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).getTime();
       
       let weeklyMinutes = 0;
+
       userLogs.forEach(log => {
         if (log.date) {
-          let dateParts = String(log.date).split('T')[0].split('-');
-          if (dateParts.length === 3) {
-            let logDate = new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2]));
-            if (logDate >= sevenDaysAgo) {
-              weeklyMinutes += Number(log.duration || 0);
-            }
+          let logTime = 0;
+
+          if (typeof log.date === 'string') {
+            let cleanDateStr = log.date.split('T')[0].replace(/-/g, '/');
+            logTime = new Date(cleanDateStr).getTime();
+          } else {
+            logTime = new Date(log.date).getTime();
+          }
+
+          if (!isNaN(logTime) && logTime >= sevenDaysAgoTime) {
+            weeklyMinutes += Number(log.duration || 0);
           }
         }
       });
