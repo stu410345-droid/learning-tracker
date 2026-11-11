@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>自主學習歷程紀錄與報告系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- ✨ 引入 Chart.js 圖表庫 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     @media print {
@@ -104,7 +103,6 @@
           <button onclick="generatePDFReport()" class="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2.5 rounded-xl shadow-md transition-all text-sm">📄 生成學習歷程報告 (PDF)</button>
         </div>
 
-        <!-- ✨ 新增：學習統計圖表區塊 -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">📊 各科目累積時間占比統計</h3>
           <div class="relative max-h-56 flex justify-center">
@@ -139,20 +137,26 @@
   </div>
 
   <script>
+    // ⚠️ 請確認這是你最新的 Apps Script Web App 網址
     const API_URL = "https://script.google.com/macros/s/AKfycbyGp5SXGlgZXysFijKsKsQSTZsNMeXiOkvu18_1AYfRgJm8VYmhhbEpmV-b4MxnWY-P/exec";
 
     let currentMode = 'login';
-    let currentUser = localStorage.getItem('tracker_user') || '';
-    let currentPin = localStorage.getItem('tracker_pin') || '';
+    let currentUser = '';
+    let currentPin = '';
     let userLogs = [];
-    let myChart = null; // ✨ 圖表全域變數
+    let myChart = null;
 
     document.getElementById('date').valueAsDate = new Date();
 
-    if (currentUser && currentPin) {
-      document.getElementById('loginModal').classList.add('hidden');
-      document.getElementById('currentUserSpan').innerText = currentUser;
-      fetchLogs();
+    // 檢查是否有剛註冊的新帳號暫存 (sessionStorage 重新整理即清除)
+    const newlyRegisteredUser = sessionStorage.getItem('new_registered_user');
+    const newlyRegisteredPin = sessionStorage.getItem('new_registered_pin');
+
+    if (newlyRegisteredUser && newlyRegisteredPin) {
+      loginUser(newlyRegisteredUser, newlyRegisteredPin, false);
+      // 自動登入一次後立即清除備份，確保下次開啟網頁仍需登入
+      sessionStorage.removeItem('new_registered_user');
+      sessionStorage.removeItem('new_registered_pin');
     }
 
     function switchAuthTab(mode) {
@@ -171,7 +175,7 @@
         tabRegister.className = "w-1/2 pb-2 border-b-2 border-indigo-600 text-indigo-600";
         tabLogin.className = "w-1/2 pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-600";
         btn.innerText = "建立新帳號並登入";
-        desc.innerText = "註冊新姓名與自訂通行碼，資料將自動儲存";
+        desc.innerText = "註冊新姓名與自訂通行碼，系統將自動為您保留帳號";
       }
     }
 
@@ -199,8 +203,11 @@
           const result = await res.json();
 
           if (result.status === "success") {
-            alert("🎉 註冊成功！");
-            loginUser(user, pin);
+            alert("🎉 帳號註冊成功！系統將為您自動登入");
+            // 新註冊帳號保留自動登入機制
+            sessionStorage.setItem('new_registered_user', user);
+            sessionStorage.setItem('new_registered_pin', pin);
+            loginUser(user, pin, true);
           } else {
             alert("❌ " + result.message);
           }
@@ -211,30 +218,33 @@
           btn.innerText = "建立新帳號並登入";
         }
       } else {
-        loginUser(user, pin);
+        loginUser(user, pin, false);
       }
     });
 
-    function loginUser(user, pin) {
+    function loginUser(user, pin, isNewUser) {
       currentUser = user;
       currentPin = pin;
-      localStorage.setItem('tracker_user', currentUser);
-      localStorage.setItem('tracker_pin', currentPin);
       document.getElementById('currentUserSpan').innerText = currentUser;
       document.getElementById('loginModal').classList.add('hidden');
       fetchLogs();
     }
 
     function logout() {
-      localStorage.removeItem('tracker_user');
-      localStorage.removeItem('tracker_pin');
       currentUser = '';
       currentPin = '';
+      sessionStorage.removeItem('new_registered_user');
+      sessionStorage.removeItem('new_registered_pin');
+      localStorage.removeItem('tracker_user');
+      localStorage.removeItem('tracker_pin');
+      document.getElementById('authUser').value = '';
+      document.getElementById('authPin').value = '';
       document.getElementById('currentUserSpan').innerText = "未登入";
       document.getElementById('loginModal').classList.remove('hidden');
       document.getElementById('logsContainer').innerHTML = `<div class="text-center py-8 text-slate-400">請先登入驗證身分...</div>`;
       document.getElementById('totalLogs').innerText = "0 筆";
       document.getElementById('totalHours').innerText = "0 小時";
+      if (myChart) myChart.destroy();
     }
 
     function fetchLogs() {
@@ -247,9 +257,10 @@
         if (result && result.status === "success") {
           userLogs = result.data || [];
           renderUserLogs();
-          renderChart(); // ✨ 載入資料後繪製圖表
+          renderChart();
         } else {
-          container.innerHTML = `<div class="text-red-500 text-center py-4">驗證失敗：${result ? result.message : '帳號或通行碼錯誤'}</div>`;
+          alert("驗證失敗：帳號或通行碼不正確！");
+          logout();
         }
       };
 
@@ -308,7 +319,6 @@
       totalHoursEl.innerText = (totalMinutes / 60).toFixed(1) + " 小時";
     }
 
-    // ✨ 繪製 Chart.js 圓餅圖函式
     function renderChart() {
       const ctx = document.getElementById('subjectChart').getContext('2d');
       const subjectStats = {};
@@ -322,7 +332,7 @@
       const dataValues = Object.values(subjectStats).map(mins => (mins / 60).toFixed(1));
 
       if (myChart) {
-        myChart.destroy(); // 避免重複渲染疊加
+        myChart.destroy();
       }
 
       if (labels.length === 0) return;
