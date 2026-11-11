@@ -75,8 +75,14 @@
             <input type="number" id="duration" min="1" placeholder="例如：60" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">學習內容 / 筆記重點</label>
-            <textarea id="content" rows="3" placeholder="今天學到了什麼概念？" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+            <!-- ✨ 新增：引導式範本按鈕區 -->
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-xs font-bold text-slate-600">學習內容 / 筆記重點</label>
+              <button type="button" onclick="applyTemplate('new')" class="text-[11px] text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition-colors font-semibold">
+                💡 帶入引導範本
+              </button>
+            </div>
+            <textarea id="content" rows="6" placeholder="今天學到了什麼概念？" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">成果照片網址 (選填)</label>
@@ -129,7 +135,7 @@
     </div>
   </div>
 
-  <!-- ✨ 新增：編輯舊筆記 Modal -->
+  <!-- 編輯舊筆記 Modal -->
   <div id="editModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
@@ -152,8 +158,14 @@
           <input type="number" id="editDuration" min="1" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">學習內容 / 筆記重點</label>
-          <textarea id="editContent" rows="3" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+          <!-- ✨ 編輯彈窗中的引導範本按鈕 -->
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-xs font-bold text-slate-600">學習內容 / 筆記重點</label>
+            <button type="button" onclick="applyTemplate('edit')" class="text-[11px] text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition-colors font-semibold">
+              💡 帶入引導範本
+            </button>
+          </div>
+          <textarea id="editContent" rows="6" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-600 mb-1">成果照片網址 (選填)</label>
@@ -210,7 +222,7 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyGp5SXGlgZXysFijKsKsQSTZsNMeXiOkvu18_1AYfRgJm8VYmhhbEpmV-b4MxnWY-P/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyGp5SXGlgZXysFijKsKsQSTZsNMeXiOkvu18_1AYfRgJm8VYmhhbEpmV-b4MxnWY-P/execㄋ";
 
     let currentMode = 'login';
     let currentUser = '';
@@ -218,6 +230,20 @@
     let userLogs = [];
     let activeSubject = 'ALL';
     let myChart = null;
+
+    // ✨ 引導範本預設內容
+    const GUIDED_TEMPLATE = 
+`【學習目標】
+• 
+
+【核心概念與重點整理】
+• 
+
+【遇到的困難與解決方式】
+• 
+
+【心得與反思】
+• `;
 
     document.getElementById('date').valueAsDate = new Date();
 
@@ -228,6 +254,18 @@
       loginUser(newlyRegisteredUser, newlyRegisteredPin, false);
       sessionStorage.removeItem('new_registered_user');
       sessionStorage.removeItem('new_registered_pin');
+    }
+
+    // ✨ 套用範本函數
+    function applyTemplate(target) {
+      const fieldId = target === 'edit' ? 'editContent' : 'content';
+      const field = document.getElementById(fieldId);
+
+      if (field.value.trim() !== '' && !confirm("帶入範本將覆蓋目前框內的內容，確定要帶入嗎？")) {
+        return;
+      }
+
+      field.value = GUIDED_TEMPLATE;
     }
 
     function switchAuthTab(mode) {
@@ -395,7 +433,6 @@
               <span class="inline-block px-2.5 py-1 bg-indigo-100 text-indigo-700 font-bold rounded-md text-xs">
                 ${log.subject}
               </span>
-              <!-- ✨ 按鈕區：新增『編輯』按鈕 -->
               <div class="flex items-center gap-2">
                 <span class="text-xs text-slate-400">${dateStr}</span>
                 <button onclick="openEditModal('${log.id}')" class="text-xs text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 px-2 py-0.5 rounded transition-colors font-medium">
@@ -419,7 +456,6 @@
       totalHoursEl.innerText = (totalMinutes / 60).toFixed(1) + " 小時";
     }
 
-    // ✨ 開啟編輯舊筆記視窗，自動填入原先內容
     function openEditModal(logId) {
       const log = userLogs.find(l => l.id === logId);
       if (!log) return;
@@ -438,7 +474,6 @@
       document.getElementById('editModal').classList.add('hidden');
     }
 
-    // ✨ 送出編輯修改
     document.getElementById('editForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const submitBtn = document.getElementById('editSubmitBtn');
