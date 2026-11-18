@@ -7,18 +7,68 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* 簡報分頁卡片樣式 */
+    /* Canva 風格簡報分頁卡片與主題配色 */
     .slide-page {
-      background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f0fdf4 100%);
       border: 1px solid #cbd5e1;
       border-radius: 16px;
       padding: 40px;
-      min-height: 460px;
+      min-height: 480px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       position: relative;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+      transition: all 0.25s ease;
+    }
+
+    /* 主題 1：薄荷森綠（預設） */
+    .theme-mint .slide-page {
+      background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #ecfdf5 100%);
+      border-color: #99f6e4;
+    }
+    .theme-mint .slide-accent { color: #115e59; }
+    .theme-mint .slide-badge { background-color: #115e59; color: #ffffff; }
+    .theme-mint .slide-divider { background-color: #0f766e; }
+
+    /* 主題 2：知性靛藍 */
+    .theme-indigo .slide-page {
+      background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 60%, #ede9fe 100%);
+      border-color: #c7d2fe;
+    }
+    .theme-indigo .slide-accent { color: #312e81; }
+    .theme-indigo .slide-badge { background-color: #3730a3; color: #ffffff; }
+    .theme-indigo .slide-divider { background-color: #4338ca; }
+
+    /* 主題 3：暖陽奶茶 */
+    .theme-warm .slide-page {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #ffedd5 100%);
+      border-color: #fde68a;
+    }
+    .theme-warm .slide-accent { color: #78350f; }
+    .theme-warm .slide-badge { background-color: #92400e; color: #ffffff; }
+    .theme-warm .slide-divider { background-color: #b45309; }
+
+    /* 主題 4：極簡純白 */
+    .theme-clean .slide-page {
+      background: #ffffff;
+      border-color: #cbd5e1;
+    }
+    .theme-clean .slide-accent { color: #0f172a; }
+    .theme-clean .slide-badge { background-color: #1e293b; color: #ffffff; }
+    .theme-clean .slide-divider { background-color: #334155; }
+
+    /* 可編輯區域懸停提示 */
+    [contenteditable="true"]:hover {
+      outline: 2px dashed #6366f1;
+      outline-offset: 4px;
+      border-radius: 6px;
+      cursor: text;
+    }
+    [contenteditable="true"]:focus {
+      outline: 2px solid #4f46e5;
+      outline-offset: 4px;
+      border-radius: 6px;
+      background-color: rgba(255, 255, 255, 0.85);
     }
 
     @media print {
@@ -53,10 +103,9 @@
         page-break-after: auto;
         break-after: auto;
       }
-      .editable-box {
+      [contenteditable="true"] {
+        outline: none !important;
         border: none !important;
-        background: transparent !important;
-        padding: 0 !important;
       }
     }
   </style>
@@ -94,7 +143,7 @@
     <header class="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">🎓 自主學習歷程紀錄系統</h1>
-        <p class="text-xs text-slate-500 mt-1">紀錄每日學習，一鍵生成簡報式學習歷程檔案（封面・目次・動機・過程・困難・克服・作品・心得）</p>
+        <p class="text-xs text-slate-500 mt-1">紀錄每日學習，一鍵生成可自由編輯排版的簡報式學習歷程檔案</p>
       </div>
 
       <div class="flex items-center gap-3 bg-indigo-50 px-3 py-2 rounded-xl border border-indigo-100">
@@ -163,7 +212,7 @@
                 <div id="avgScore" class="text-2xl font-black text-amber-300">-- 分</div>
               </div>
             </div>
-            <button onclick="openExportModal()" class="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2.5 rounded-xl shadow-md transition-all text-sm">📑 生成簡報式歷程檔案</button>
+            <button onclick="openExportModal()" class="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2.5 rounded-xl shadow-md transition-all text-sm">🎨 進入簡報自由編輯器</button>
           </div>
 
           <!-- 每週目標與動態進度條區塊 -->
@@ -268,12 +317,12 @@
 
       <div class="space-y-3">
         <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">封面主標題（例如：我的程式設計、英文自主學習歷程）</label>
+          <label class="block text-xs font-bold text-slate-600 mb-1">封面主標題（生成後仍可自由修改）</label>
           <input type="text" id="customReportTitle" placeholder="預設：我的自主學習歷程" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
 
         <div class="flex justify-between items-center text-xs text-slate-500 pt-1">
-          <span>請勾選要放進「作品呈現」的科目：</span>
+          <span>請勾選要匯入簡報的科目：</span>
           <div>
             <button onclick="toggleAllExportCheck(true)" class="text-indigo-600 hover:underline mr-2">全選</button>
             <button onclick="toggleAllExportCheck(false)" class="text-slate-400 hover:underline">全不選</button>
@@ -285,25 +334,52 @@
 
       <div class="flex gap-2 pt-2">
         <button onclick="closeExportModal()" class="w-1/2 bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-300">取消</button>
-        <button onclick="generatePDFReport()" class="w-1/2 bg-indigo-600 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700 shadow">生成簡報 PDF</button>
+        <button onclick="generatePDFReport()" class="w-1/2 bg-indigo-600 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700 shadow">開啟 Canva 編輯器</button>
       </div>
     </div>
   </div>
 
-  <!-- PDF 簡報預覽 Modal -->
-  <div id="reportModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-200 w-full max-w-4xl rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
-      <div class="p-4 bg-slate-800 text-white flex justify-between items-center no-print">
-        <div>
-          <span class="text-sm font-semibold">📑 簡報式學習歷程預覽（已自動排好橫式分頁）</span>
-          <span class="block text-[11px] text-amber-300">💡 點擊各頁虛線框内的文字可直接修改微調，滿意後按右上角「列印 / 另存 PDF」即可！</span>
+  <!-- Canva 級簡報自由編輯器 Modal -->
+  <div id="reportModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-2 sm:p-4 z-50">
+    <div class="bg-slate-200 w-full max-w-5xl rounded-2xl shadow-2xl h-[94vh] flex flex-col overflow-hidden">
+      
+      <!-- 頂部 Canva 編輯工具列 -->
+      <div class="bg-slate-900 text-white px-4 py-3 flex flex-wrap justify-between items-center gap-3 no-print border-b border-slate-700">
+        <!-- 左側：主題配色切換 -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-slate-400">🎨 主題風格：</span>
+          <button onclick="setSlideTheme('theme-mint')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-teal-700 hover:bg-teal-600 text-white border border-teal-400">薄荷森綠</button>
+          <button onclick="setSlideTheme('theme-indigo')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-indigo-700 hover:bg-indigo-600 text-white border border-indigo-400">知性靛藍</button>
+          <button onclick="setSlideTheme('theme-warm')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-amber-700 hover:bg-amber-600 text-white border border-amber-400">暖陽奶茶</button>
+          <button onclick="setSlideTheme('theme-clean')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 hover:bg-white text-slate-900">極簡純白</button>
         </div>
-        <div class="flex gap-2">
-          <button onclick="window.print()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3.5 py-2 rounded-lg shadow">🖨️ 列印 / 另存 PDF</button>
-          <button onclick="closeReportModal()" class="text-slate-400 hover:text-white font-bold px-2">✕</button>
+
+        <!-- 中間：文字格式微調 -->
+        <div class="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">
+          <button onmousedown="event.preventDefault(); execFormat('bold')" title="粗體" class="px-2 py-0.5 hover:bg-slate-700 rounded text-xs font-black">B</button>
+          <button onmousedown="event.preventDefault(); execFormat('italic')" title="斜體" class="px-2 py-0.5 hover:bg-slate-700 rounded text-xs italic">I</button>
+          <button onmousedown="event.preventDefault(); execFormat('underline')" title="底線" class="px-2 py-0.5 hover:bg-slate-700 rounded text-xs underline">U</button>
+          <span class="text-slate-600">|</span>
+          <button onmousedown="event.preventDefault(); execFormat('justifyLeft')" title="靠左對齊" class="px-2 py-0.5 hover:bg-slate-700 rounded text-xs">⬅️ 靠左</button>
+          <button onmousedown="event.preventDefault(); execFormat('justifyCenter')" title="置中對齊" class="px-2 py-0.5 hover:bg-slate-700 rounded text-xs">↔️ 置中</button>
+          <span class="text-slate-600">|</span>
+          <button onclick="addNewBlankSlide()" class="px-2.5 py-0.5 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-bold">➕ 新增空白頁</button>
+        </div>
+
+        <!-- 右側：匯出與關閉 -->
+        <div class="flex items-center gap-2">
+          <button onclick="window.print()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold px-3.5 py-2 rounded-lg shadow">🖨️ 匯出 / 另存 PDF</button>
+          <button onclick="closeReportModal()" class="text-slate-400 hover:text-white font-bold px-2 text-lg">✕</button>
         </div>
       </div>
-      <div id="printableReport" class="p-6 overflow-y-auto space-y-6"></div>
+
+      <!-- 操作提示列 -->
+      <div class="bg-amber-50 border-b border-amber-200 px-4 py-1.5 text-xs text-amber-900 flex justify-between items-center no-print">
+        <span>💡 <strong>Canva 自由編輯模式：</strong>直接點擊任何文字即可改字；每頁右上角可「上移 / 下移 / 插圖 / 刪頁」，列印時按鈕會自動隱藏。</span>
+      </div>
+
+      <!-- 簡報畫布區 -->
+      <div id="printableReport" class="theme-mint p-6 sm:p-8 overflow-y-auto space-y-6 flex-1"></div>
     </div>
   </div>
 
@@ -468,7 +544,7 @@
 
       const script = document.createElement('script');
       script.id = 'jsonpScript';
-      script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&v=6&t=${Date.now()}`;
+      script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&v=7&t=${Date.now()}`;
       document.body.appendChild(script);
     }
 
@@ -726,7 +802,105 @@
       document.querySelectorAll('input[name="exportSubjects"]').forEach(cb => cb.checked = status);
     }
 
-    // ✨ 依簡報架構自動生成「動機、學習過程、遭遇困難、克服阻礙、心得與反思」五大段落
+    // ✨ Canva 自由編輯器控制函數
+    function setSlideTheme(themeClass) {
+      const container = document.getElementById('printableReport');
+      container.className = `${themeClass} p-6 sm:p-8 overflow-y-auto space-y-6 flex-1`;
+    }
+
+    function execFormat(command) {
+      document.execCommand(command, false, null);
+    }
+
+    function getSlideToolbar() {
+      return `
+        <div class="slide-controls absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur border border-slate-200 px-2 py-1 rounded-lg shadow-sm no-print text-[11px] font-bold text-slate-600">
+          <button onclick="insertImageToSlide(this)" title="插入圖片網址" class="hover:text-indigo-600 px-1.5 py-0.5 rounded hover:bg-slate-100">🖼️ 插圖</button>
+          <button onclick="toggleFontSize(this)" title="切換字體大小" class="hover:text-indigo-600 px-1.5 py-0.5 rounded hover:bg-slate-100">🔠 字級</button>
+          <span class="text-slate-300">|</span>
+          <button onclick="moveSlide(this, -1)" title="往上移一頁" class="hover:text-indigo-600 px-1 py-0.5 rounded hover:bg-slate-100">⬆️</button>
+          <button onclick="moveSlide(this, 1)" title="往下移一頁" class="hover:text-indigo-600 px-1 py-0.5 rounded hover:bg-slate-100">⬇️</button>
+          <button onclick="duplicateSlide(this)" title="複製此頁" class="hover:text-emerald-600 px-1 py-0.5 rounded hover:bg-slate-100">📋</button>
+          <button onclick="deleteSlide(this)" title="刪除此頁" class="hover:text-red-600 px-1 py-0.5 rounded hover:bg-red-50">🗑️</button>
+        </div>
+      `;
+    }
+
+    function moveSlide(btn, direction) {
+      const slide = btn.closest('.slide-page');
+      const container = document.getElementById('printableReport');
+      if (direction === -1 && slide.previousElementSibling) {
+        container.insertBefore(slide, slide.previousElementSibling);
+      } else if (direction === 1 && slide.nextElementSibling) {
+        container.insertBefore(slide.nextElementSibling, slide);
+      }
+    }
+
+    function duplicateSlide(btn) {
+      const slide = btn.closest('.slide-page');
+      const clone = slide.cloneNode(true);
+      slide.parentNode.insertBefore(clone, slide.nextSibling);
+    }
+
+    function deleteSlide(btn) {
+      const slides = document.querySelectorAll('#printableReport .slide-page');
+      if (slides.length <= 1) {
+        alert("至少需要保留一頁簡報！");
+        return;
+      }
+      if (confirm("確定要刪除這一頁簡報嗎？")) {
+        btn.closest('.slide-page').remove();
+      }
+    }
+
+    function toggleFontSize(btn) {
+      const slide = btn.closest('.slide-page');
+      const bodyEl = slide.querySelector('.slide-body-text');
+      if (!bodyEl) return;
+      if (bodyEl.classList.contains('text-lg')) {
+        bodyEl.classList.remove('text-lg');
+        bodyEl.classList.add('text-xl');
+      } else if (bodyEl.classList.contains('text-xl')) {
+        bodyEl.classList.remove('text-xl');
+        bodyEl.classList.add('text-base');
+      } else {
+        bodyEl.classList.remove('text-base');
+        bodyEl.classList.add('text-lg');
+      }
+    }
+
+    function insertImageToSlide(btn) {
+      const url = prompt("請輸入要插入這頁的圖片網址 (例如 https://i.imgur.com/xxx.jpg)：");
+      if (!url || !url.trim()) return;
+      const slide = btn.closest('.slide-page');
+      const contentBox = slide.querySelector('.slide-content-area');
+      const imgWrapper = document.createElement('div');
+      imgWrapper.className = "mt-4 flex flex-col items-center relative group";
+      imgWrapper.innerHTML = `
+        <img src="${url.trim()}" class="max-h-48 rounded-xl border border-slate-200 shadow-sm object-contain">
+        <button onclick="this.parentElement.remove()" class="no-print mt-1 text-[11px] text-red-500 hover:underline">移除此圖片</button>
+      `;
+      contentBox.appendChild(imgWrapper);
+    }
+
+    function addNewBlankSlide() {
+      const container = document.getElementById('printableReport');
+      const newSlide = document.createElement('div');
+      newSlide.className = "slide-page";
+      newSlide.innerHTML = `
+        ${getSlideToolbar()}
+        <div class="slide-content-area max-w-2xl mx-auto w-full space-y-5">
+          <div class="flex items-center gap-3">
+            <span contenteditable="true" class="text-3xl">✨</span>
+            <h2 contenteditable="true" class="slide-accent text-3xl font-black">自訂章節標題（點擊修改）</h2>
+          </div>
+          <div contenteditable="true" class="slide-body-text text-lg text-slate-700 leading-loose whitespace-pre-line bg-white/75 p-5 rounded-2xl">點擊這裡自由輸入你想補充的文字內容、成果說明或圖片...</div>
+        </div>
+      `;
+      container.appendChild(newSlide);
+      newSlide.scrollIntoView({ behavior: 'smooth' });
+    }
+
     function buildSlideNarratives(sortedLogs, selectedSubjects, totalHoursStr) {
       let goals = [];
       let processes = [];
@@ -769,7 +943,6 @@
 
       const subjectStr = selectedSubjects.join("、");
 
-      // 1. 動機
       let motivation = `在這段時間的「${subjectStr}」學習中，我接觸了許多相關知識與實作內容。`;
       if (goals.length > 0) {
         motivation += `為了達成「${goals.slice(0, 3).join("」、「")}」等目標，同時整理這階段的學習成果並回顧自己的成長與收穫，因此製作此學習歷程報告。`;
@@ -777,7 +950,6 @@
         motivation += `為了系統性地整理這段期間的學習成果，並回顧自己在課程與實作中的成長和收穫，同時培養自主規劃與解決問題的能力，因此製作此報告。`;
       }
 
-      // 2. 學習過程
       let process = `在「${subjectStr}」的學習過程中，我共累積了 ${sortedLogs.length} 次實作與筆記紀錄（總計 ${totalHoursStr} 小時）。`;
       if (processes.length > 0) {
         process += `從基礎概念開始，逐步學習了${processes.slice(0, 5).join("、")}等核心內容，並透過動手實作與練習將理論轉化為具體成果。`;
@@ -792,7 +964,6 @@
         process += `在階段性的評量檢核中，也取得了平均 ${avg} 分的實質成效。`;
       }
 
-      // 3. 遭遇困難
       let difficulty = `隨著學習難度的加深，實作內容的複雜度也逐漸增加。`;
       if (difficulties.length > 0) {
         difficulty += `在練習過程中，我曾遇到「${difficulties.slice(0, 3).join("」、「")}」等問題，一度導致結果不如預期或無法順利執行。`;
@@ -800,7 +971,6 @@
         difficulty += `漸漸地，我發覺在實作時容易出現錯誤卻一時找不到原因；有時因為細節疏忽、語法或觀念思考不夠完整，導致結果出現偏差。`;
       }
 
-      // 4. 克服阻礙
       let solution = `面對這些瓶頸，我沒有選擇放棄，而是冷靜下來逐一檢查細節、回頭翻閱教材，並主動向老師或同學請教。`;
       if (solutions.length > 0) {
         solution += `透過「${solutions.slice(0, 3).join("」、「")}」等方式不斷嘗試與修正，最終成功找出盲點並完成任務。我也因此體會到，學習不能只靠死記硬背，而是要真正理解背後的邏輯。`;
@@ -808,7 +978,6 @@
         solution += `經過不斷嘗試、除錯與修改，我成功找出問題根源並完成作品。這次經驗讓我發現自己過去對觀念的盲點，從此不再死記硬背，而是專注於真正理解原理。`;
       }
 
-      // 5. 心得與反思
       let reflection = `剛開始接觸「${subjectStr}」時，曾覺得內容複雜、容易因小細節出錯而受挫。幸好透過持續練習與師長的指導，讓我逐漸找回信心。`;
       if (reflections.length > 0) {
         reflection += `在這次歷程中，我深刻體會到：${reflections.slice(0, 3).join("；")}。`;
@@ -838,33 +1007,35 @@
 
       const { motivation, process, difficulty, solution, reflection } = buildSlideNarratives(sortedLogs, selectedSubjects, totalHoursStr);
 
-      // 作品呈現頁（每一筆筆記製作成一張簡報作品展示卡，每 2 筆一頁或每筆獨立一頁）
       const workSlidesHtml = sortedLogs.map((log, idx) => {
         const dateStr = log.date ? new Date(log.date).toLocaleDateString("zh-TW") : "";
-        const scoreTag = (log.score !== undefined && log.score !== "") ? `<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full text-xs font-bold">評量成績：${log.score} 分</span>` : '';
+        const scoreTag = (log.score !== undefined && log.score !== "") ? `<span contenteditable="true" class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full text-xs font-bold">評量成績：${log.score} 分</span>` : '';
         const titleLine = log.content.split('\n')[0].replace(/[#【】•]/g, '').trim().slice(0, 24) || `${log.subject} 實作紀錄 #${idx + 1}`;
 
         return `
           <div class="slide-page">
-            <div class="flex justify-between items-center border-b-2 border-teal-700/20 pb-3 mb-5">
-              <div>
-                <span class="text-xs font-bold tracking-widest text-teal-700 uppercase">05 作品與實作呈現 • 第 ${idx + 1} 項</span>
-                <h2 class="text-2xl font-black text-slate-800 mt-0.5">${titleLine}</h2>
-              </div>
-              <div class="flex items-center gap-2">
-                ${scoreTag}
-                <span class="bg-teal-800 text-white px-3 py-1 rounded-full text-xs font-bold">${log.subject} • ${dateStr}</span>
-              </div>
-            </div>
-
-            <div class="grid ${log.imageUrl ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-6 items-center flex-1">
-              <div class="bg-slate-900 text-emerald-300 font-mono text-xs p-4 rounded-xl shadow-inner whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">${log.content}</div>
-              ${log.imageUrl ? `
-                <div class="flex flex-col items-center justify-center bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                  <img src="${log.imageUrl}" alt="作品成果" class="max-h-56 rounded-lg object-contain">
-                  <span class="text-[11px] text-slate-400 mt-2">▲ 作品實作與執行結果畫面</span>
+            ${getSlideToolbar()}
+            <div class="slide-content-area w-full">
+              <div class="flex justify-between items-center border-b-2 border-slate-300/60 pb-3 mb-5">
+                <div>
+                  <span contenteditable="true" class="slide-accent text-xs font-bold tracking-widest uppercase">05 作品與實作呈現 • 第 ${idx + 1} 項</span>
+                  <h2 contenteditable="true" class="text-2xl font-black text-slate-800 mt-0.5">${titleLine}</h2>
                 </div>
-              ` : ''}
+                <div class="flex items-center gap-2">
+                  ${scoreTag}
+                  <span contenteditable="true" class="slide-badge px-3 py-1 rounded-full text-xs font-bold">${log.subject} • ${dateStr}</span>
+                </div>
+              </div>
+
+              <div class="grid ${log.imageUrl ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-6 items-center">
+                <div contenteditable="true" class="bg-slate-900 text-emerald-300 font-mono text-xs p-4 rounded-xl shadow-inner whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">${log.content}</div>
+                ${log.imageUrl ? `
+                  <div class="flex flex-col items-center justify-center bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                    <img src="${log.imageUrl}" alt="作品成果" class="max-h-56 rounded-lg object-contain">
+                    <span contenteditable="true" class="text-[11px] text-slate-400 mt-2">▲ 作品實作與執行結果畫面</span>
+                  </div>
+                ` : ''}
+              </div>
             </div>
           </div>
         `;
@@ -873,74 +1044,82 @@
       document.getElementById('printableReport').innerHTML = `
         <!-- 第 1 頁：封面頁 -->
         <div class="slide-page text-center items-center">
-          <div class="inline-block px-4 py-1.5 rounded-full bg-teal-800/10 text-teal-800 text-xs font-bold tracking-widest mb-4">
-            PORTFOLIO & LEARNING LOG
+          ${getSlideToolbar()}
+          <div class="slide-content-area flex flex-col items-center">
+            <div contenteditable="true" class="inline-block px-4 py-1.5 rounded-full bg-slate-900/5 slide-accent text-xs font-bold tracking-widest mb-4">
+              PORTFOLIO & LEARNING LOG
+            </div>
+            <h1 contenteditable="true" class="slide-accent text-4xl sm:text-5xl font-black tracking-tight mb-6">${customTitle}</h1>
+            <div class="slide-divider w-20 h-1.5 rounded-full mb-6"></div>
+            <p contenteditable="true" class="text-lg font-bold text-slate-700">報告人：${currentUser}</p>
+            <p contenteditable="true" class="text-xs text-slate-500 mt-2">包含科目：${selectedSubjects.join("、")} ｜ 累積投入：${totalHoursStr} 小時（共 ${sortedLogs.length} 筆紀錄）</p>
           </div>
-          <h1 class="text-4xl sm:text-5xl font-black text-teal-900 tracking-tight mb-6">${customTitle}</h1>
-          <div class="w-20 h-1.5 bg-teal-700 rounded-full mb-6"></div>
-          <p class="text-lg font-bold text-slate-700">報告人：${currentUser}</p>
-          <p class="text-xs text-slate-500 mt-2">包含科目：${selectedSubjects.join("、")} ｜ 累積投入：${totalHoursStr} 小時（共 ${sortedLogs.length} 筆紀錄）</p>
         </div>
 
         <!-- 第 2 頁：目次頁 -->
         <div class="slide-page">
-          <div class="max-w-xl mx-auto w-full flex flex-col sm:flex-row items-center gap-10">
+          ${getSlideToolbar()}
+          <div class="slide-content-area max-w-xl mx-auto w-full flex flex-col sm:flex-row items-center gap-10">
             <div class="text-center sm:text-left">
-              <div class="text-5xl font-black text-teal-800 leading-tight">目<br>次</div>
-              <div class="w-10 h-1 bg-teal-700 mt-3 mx-auto sm:mx-0"></div>
+              <div contenteditable="true" class="slide-accent text-5xl font-black leading-tight">目<br>次</div>
+              <div class="slide-divider w-10 h-1 mt-3 mx-auto sm:mx-0"></div>
             </div>
-            <ul class="space-y-3.5 text-lg font-bold text-slate-700 flex-1 border-l-2 border-teal-700/30 pl-8">
-              <li class="flex items-center gap-3"><span class="text-teal-700">●</span> 動機</li>
-              <li class="flex items-center gap-3"><span class="text-teal-700">●</span> 學習過程</li>
-              <li class="flex items-center gap-3"><span class="text-teal-700">●</span> 遭遇困難</li>
-              <li class="flex items-center gap-3"><span class="text-teal-700">●</span> 克服阻礙</li>
-              <li class="flex items-center gap-3"><span class="text-teal-700">●</span> 作品呈現（共 ${sortedLogs.length} 件）</li>
-              <li class="flex items-center gap-3"><span class="text-teal-700">●</span> 心得與反思</li>
+            <ul contenteditable="true" class="space-y-3.5 text-lg font-bold text-slate-700 flex-1 border-l-2 border-slate-300 pl-8">
+              <li class="flex items-center gap-3"><span class="slide-accent">●</span> 動機</li>
+              <li class="flex items-center gap-3"><span class="slide-accent">●</span> 學習過程</li>
+              <li class="flex items-center gap-3"><span class="slide-accent">●</span> 遭遇困難</li>
+              <li class="flex items-center gap-3"><span class="slide-accent">●</span> 克服阻礙</li>
+              <li class="flex items-center gap-3"><span class="slide-accent">●</span> 作品呈現（共 ${sortedLogs.length} 件）</li>
+              <li class="flex items-center gap-3"><span class="slide-accent">●</span> 心得與反思</li>
             </ul>
           </div>
         </div>
 
         <!-- 第 3 頁：動機 -->
         <div class="slide-page">
-          <div class="max-w-2xl mx-auto w-full space-y-5">
+          ${getSlideToolbar()}
+          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-5">
             <div class="flex items-center gap-3">
-              <span class="text-3xl">🔍</span>
-              <h2 class="text-3xl font-black text-teal-900">動機</h2>
+              <span contenteditable="true" class="text-3xl">🔍</span>
+              <h2 contenteditable="true" class="slide-accent text-3xl font-black">動機</h2>
             </div>
-            <div contenteditable="true" class="editable-box text-lg text-slate-700 leading-loose whitespace-pre-line border border-dashed border-teal-400 bg-white/80 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-600">${motivation}</div>
+            <div contenteditable="true" class="slide-body-text text-lg text-slate-700 leading-loose whitespace-pre-line bg-white/80 p-5 rounded-2xl">${motivation}</div>
           </div>
         </div>
 
         <!-- 第 4 頁：學習過程 -->
         <div class="slide-page">
-          <div class="max-w-2xl mx-auto w-full space-y-5">
+          ${getSlideToolbar()}
+          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-5">
             <div class="flex items-center gap-3">
-              <span class="text-3xl">📚</span>
-              <h2 class="text-3xl font-black text-teal-900">學習過程</h2>
+              <span contenteditable="true" class="text-3xl">📚</span>
+              <h2 contenteditable="true" class="slide-accent text-3xl font-black">學習過程</h2>
             </div>
-            <div contenteditable="true" class="editable-box text-lg text-slate-700 leading-loose whitespace-pre-line border border-dashed border-teal-400 bg-white/80 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-600">${process}</div>
+            <div contenteditable="true" class="slide-body-text text-lg text-slate-700 leading-loose whitespace-pre-line bg-white/80 p-5 rounded-2xl">${process}</div>
           </div>
         </div>
 
         <!-- 第 5 頁：遭遇困難 -->
         <div class="slide-page">
-          <div class="max-w-2xl mx-auto w-full space-y-5">
+          ${getSlideToolbar()}
+          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-5">
             <div class="flex items-center gap-3">
-              <span class="text-3xl">💻</span>
-              <h2 class="text-3xl font-black text-teal-900">遭遇困難</h2>
+              <span contenteditable="true" class="text-3xl">💻</span>
+              <h2 contenteditable="true" class="slide-accent text-3xl font-black">遭遇困難</h2>
             </div>
-            <div contenteditable="true" class="editable-box text-lg text-slate-700 leading-loose whitespace-pre-line border border-dashed border-teal-400 bg-white/80 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-600">${difficulty}</div>
+            <div contenteditable="true" class="slide-body-text text-lg text-slate-700 leading-loose whitespace-pre-line bg-white/80 p-5 rounded-2xl">${difficulty}</div>
           </div>
         </div>
 
         <!-- 第 6 頁：克服阻礙 -->
         <div class="slide-page">
-          <div class="max-w-2xl mx-auto w-full space-y-5">
+          ${getSlideToolbar()}
+          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-5">
             <div class="flex items-center gap-3">
-              <span class="text-3xl">⌨️</span>
-              <h2 class="text-3xl font-black text-teal-900">克服阻礙</h2>
+              <span contenteditable="true" class="text-3xl">⌨️</span>
+              <h2 contenteditable="true" class="slide-accent text-3xl font-black">克服阻礙</h2>
             </div>
-            <div contenteditable="true" class="editable-box text-lg text-slate-700 leading-loose whitespace-pre-line border border-dashed border-teal-400 bg-white/80 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-600">${solution}</div>
+            <div contenteditable="true" class="slide-body-text text-lg text-slate-700 leading-loose whitespace-pre-line bg-white/80 p-5 rounded-2xl">${solution}</div>
           </div>
         </div>
 
@@ -949,19 +1128,23 @@
 
         <!-- 倒數第 2 頁：心得與反思 -->
         <div class="slide-page">
-          <div class="max-w-2xl mx-auto w-full space-y-5">
+          ${getSlideToolbar()}
+          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-5">
             <div class="flex items-center gap-3">
-              <span class="text-3xl">💡</span>
-              <h2 class="text-3xl font-black text-teal-900">心得與反思</h2>
+              <span contenteditable="true" class="text-3xl">💡</span>
+              <h2 contenteditable="true" class="slide-accent text-3xl font-black">心得與反思</h2>
             </div>
-            <div contenteditable="true" class="editable-box text-lg text-slate-700 leading-loose whitespace-pre-line border border-dashed border-teal-400 bg-white/80 p-5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-600">${reflection}</div>
+            <div contenteditable="true" class="slide-body-text text-lg text-slate-700 leading-loose whitespace-pre-line bg-white/80 p-5 rounded-2xl">${reflection}</div>
           </div>
         </div>
 
         <!-- 最後一頁：Thank You 封底 -->
         <div class="slide-page text-center items-center">
-          <h2 class="text-5xl font-black text-teal-900 tracking-wide mb-4">Thank You</h2>
-          <p class="text-sm text-slate-500">報告人：${currentUser} ｜ 產出日期：${new Date().toLocaleDateString("zh-TW")}</p>
+          ${getSlideToolbar()}
+          <div class="slide-content-area flex flex-col items-center">
+            <h2 contenteditable="true" class="slide-accent text-5xl font-black tracking-wide mb-4">Thank You</h2>
+            <p contenteditable="true" class="text-sm text-slate-500">報告人：${currentUser} ｜ 產出日期：${new Date().toLocaleDateString("zh-TW")}</p>
+          </div>
         </div>
       `;
 
