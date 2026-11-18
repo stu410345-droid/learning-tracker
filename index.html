@@ -71,7 +71,7 @@
       background-color: rgba(255, 255, 255, 0.85);
     }
 
-    /* 修正 Safari / Chrome 多頁橫式列印被截斷的問題 */
+    /* 修正 Safari / Chrome 橫向多頁列印（168mm 安全高度，防止自動拆出空白溢出頁） */
     @media print {
       @page {
         size: A4 landscape;
@@ -99,16 +99,17 @@
         break-after: page !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
-        height: 188mm !important;
-        min-height: 188mm !important;
-        max-height: 188mm !important;
+        height: 168mm !important;
+        min-height: 168mm !important;
+        max-height: 168mm !important;
         width: 100% !important;
         border: 2px solid #cbd5e1 !important;
         border-radius: 12px !important;
         box-shadow: none !important;
         margin: 0 !important;
-        padding: 32px !important;
+        padding: 24px 32px !important;
         box-sizing: border-box !important;
+        overflow: hidden !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
@@ -388,7 +389,7 @@
 
       <!-- 操作提示列 -->
       <div class="bg-amber-50 border-b border-amber-200 px-4 py-1.5 text-xs text-amber-900 flex justify-between items-center no-print">
-        <span>💡 <strong>Canva 自由編輯模式：</strong>直接點擊任何文字即可改字；每頁右上角可「上移 / 下移 / 插圖 / 刪頁」，列印時請在視窗選擇「所有頁面」並勾選「列印背景」。</span>
+        <span>💡 <strong>Canva 自由編輯模式：</strong>直接點擊任何文字即可改字；列印時請選「橫向」、「所有頁面」、勾選「列印背景」並取消「列印標頭和註腳」。</span>
       </div>
 
       <!-- 簡報畫布區 -->
@@ -557,7 +558,7 @@
 
       const script = document.createElement('script');
       script.id = 'jsonpScript';
-      script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&v=8&t=${Date.now()}`;
+      script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&v=9&t=${Date.now()}`;
       document.body.appendChild(script);
     }
 
@@ -889,7 +890,7 @@
       const imgWrapper = document.createElement('div');
       imgWrapper.className = "mt-4 flex flex-col items-center relative group";
       imgWrapper.innerHTML = `
-        <img src="${url.trim()}" class="max-h-48 rounded-xl border border-slate-200 shadow-sm object-contain">
+        <img src="${url.trim()}" class="max-h-44 rounded-xl border border-slate-200 shadow-sm object-contain">
         <button onclick="this.parentElement.remove()" class="no-print mt-1 text-[11px] text-red-500 hover:underline">移除此圖片</button>
       `;
       contentBox.appendChild(imgWrapper);
@@ -1028,7 +1029,7 @@
           <div class="slide-page">
             ${getSlideToolbar()}
             <div class="slide-content-area w-full">
-              <div class="flex justify-between items-center border-b-2 border-slate-300/60 pb-3 mb-5">
+              <div class="flex justify-between items-center border-b-2 border-slate-300/60 pb-3 mb-4">
                 <div>
                   <span contenteditable="true" class="slide-accent text-xs font-bold tracking-widest uppercase">05 作品與實作呈現 • 第 ${idx + 1} 項</span>
                   <h2 contenteditable="true" class="text-2xl font-black text-slate-800 mt-0.5">${titleLine}</h2>
@@ -1040,10 +1041,10 @@
               </div>
 
               <div class="grid ${log.imageUrl ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-6 items-center">
-                <div contenteditable="true" class="bg-slate-900 text-emerald-300 font-mono text-xs p-4 rounded-xl shadow-inner whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">${log.content}</div>
+                <div contenteditable="true" class="bg-slate-900 text-emerald-300 font-mono text-xs p-4 rounded-xl shadow-inner whitespace-pre-wrap leading-relaxed max-h-56 overflow-y-auto">${log.content}</div>
                 ${log.imageUrl ? `
                   <div class="flex flex-col items-center justify-center bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                    <img src="${log.imageUrl}" alt="作品成果" class="max-h-56 rounded-lg object-contain">
+                    <img src="${log.imageUrl}" alt="作品成果" class="max-h-48 rounded-lg object-contain">
                     <span contenteditable="true" class="text-[11px] text-slate-400 mt-2">▲ 作品實作與執行結果畫面</span>
                   </div>
                 ` : ''}
@@ -1076,7 +1077,7 @@
               <div contenteditable="true" class="slide-accent text-5xl font-black leading-tight">目<br>次</div>
               <div class="slide-divider w-10 h-1 mt-3 mx-auto sm:mx-0"></div>
             </div>
-            <ul contenteditable="true" class="space-y-3.5 text-lg font-bold text-slate-700 flex-1 border-l-2 border-slate-300 pl-8">
+            <ul contenteditable="true" class="space-y-3 text-lg font-bold text-slate-700 flex-1 border-l-2 border-slate-300 pl-8">
               <li class="flex items-center gap-3"><span class="slide-accent">●</span> 動機</li>
               <li class="flex items-center gap-3"><span class="slide-accent">●</span> 學習過程</li>
               <li class="flex items-center gap-3"><span class="slide-accent">●</span> 遭遇困難</li>
@@ -1090,7 +1091,7 @@
         <!-- 第 3 頁：動機 -->
         <div class="slide-page">
           ${getSlideToolbar()}
-          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-5">
+          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-4">
             <div class="flex items-center gap-3">
               <span contenteditable="true" class="text-3xl">🔍</span>
               <h2 contenteditable="true" class="slide-accent text-3xl font-black">動機</h2>
@@ -1102,7 +1103,7 @@
         <!-- 第 4 頁：學習過程 -->
         <div class="slide-page">
           ${getSlideToolbar()}
-          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-5">
+          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-4">
             <div class="flex items-center gap-3">
               <span contenteditable="true" class="text-3xl">📚</span>
               <h2 contenteditable="true" class="slide-accent text-3xl font-black">學習過程</h2>
@@ -1114,7 +1115,7 @@
         <!-- 第 5 頁：遭遇困難 -->
         <div class="slide-page">
           ${getSlideToolbar()}
-          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-5">
+          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-4">
             <div class="flex items-center gap-3">
               <span contenteditable="true" class="text-3xl">💻</span>
               <h2 contenteditable="true" class="slide-accent text-3xl font-black">遭遇困難</h2>
@@ -1126,7 +1127,7 @@
         <!-- 第 6 頁：克服阻礙 -->
         <div class="slide-page">
           ${getSlideToolbar()}
-          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-5">
+          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-4">
             <div class="flex items-center gap-3">
               <span contenteditable="true" class="text-3xl">⌨️</span>
               <h2 contenteditable="true" class="slide-accent text-3xl font-black">克服阻礙</h2>
@@ -1141,7 +1142,7 @@
         <!-- 倒數第 2 頁：心得與反思 -->
         <div class="slide-page">
           ${getSlideToolbar()}
-          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-5">
+          <div class="slide-content-area max-w-2xl mx-auto w-full space-y-4">
             <div class="flex items-center gap-3">
               <span contenteditable="true" class="text-3xl">💡</span>
               <h2 contenteditable="true" class="slide-accent text-3xl font-black">心得與反思</h2>
