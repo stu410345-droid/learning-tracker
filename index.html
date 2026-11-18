@@ -71,37 +71,50 @@
       background-color: rgba(255, 255, 255, 0.85);
     }
 
+    /* 修正 Safari / Chrome 多頁橫式列印被截斷的問題 */
     @media print {
       @page {
         size: A4 landscape;
-        margin: 10mm;
+        margin: 8mm;
       }
-      body * { visibility: hidden; }
-      #printableReport, #printableReport * { visibility: visible; }
-      #printableReport {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 0 !important;
+      html, body {
+        height: auto !important;
+        overflow: visible !important;
         background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
-      .no-print { display: none !important; }
+      body > *:not(#printArea) {
+        display: none !important;
+      }
+      #printArea {
+        display: block !important;
+        width: 100% !important;
+      }
+      .no-print {
+        display: none !important;
+      }
       .slide-page {
-        page-break-after: always;
-        break-after: page;
-        height: 185mm;
-        min-height: 185mm;
+        page-break-after: always !important;
+        break-after: page !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        height: 188mm !important;
+        min-height: 188mm !important;
+        max-height: 188mm !important;
+        width: 100% !important;
         border: 2px solid #cbd5e1 !important;
         border-radius: 12px !important;
         box-shadow: none !important;
-        margin-bottom: 0 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+        margin: 0 !important;
+        padding: 32px !important;
+        box-sizing: border-box !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
       .slide-page:last-child {
-        page-break-after: auto;
-        break-after: auto;
+        page-break-after: auto !important;
+        break-after: auto !important;
       }
       [contenteditable="true"] {
         outline: none !important;
@@ -368,14 +381,14 @@
 
         <!-- 右側：匯出與關閉 -->
         <div class="flex items-center gap-2">
-          <button onclick="window.print()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold px-3.5 py-2 rounded-lg shadow">🖨️ 匯出 / 另存 PDF</button>
+          <button onclick="printSlides()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold px-3.5 py-2 rounded-lg shadow">🖨️ 匯出 / 另存 PDF</button>
           <button onclick="closeReportModal()" class="text-slate-400 hover:text-white font-bold px-2 text-lg">✕</button>
         </div>
       </div>
 
       <!-- 操作提示列 -->
       <div class="bg-amber-50 border-b border-amber-200 px-4 py-1.5 text-xs text-amber-900 flex justify-between items-center no-print">
-        <span>💡 <strong>Canva 自由編輯模式：</strong>直接點擊任何文字即可改字；每頁右上角可「上移 / 下移 / 插圖 / 刪頁」，列印時按鈕會自動隱藏。</span>
+        <span>💡 <strong>Canva 自由編輯模式：</strong>直接點擊任何文字即可改字；每頁右上角可「上移 / 下移 / 插圖 / 刪頁」，列印時請在視窗選擇「所有頁面」並勾選「列印背景」。</span>
       </div>
 
       <!-- 簡報畫布區 -->
@@ -544,7 +557,7 @@
 
       const script = document.createElement('script');
       script.id = 'jsonpScript';
-      script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&v=7&t=${Date.now()}`;
+      script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&v=8&t=${Date.now()}`;
       document.body.appendChild(script);
     }
 
@@ -802,7 +815,6 @@
       document.querySelectorAll('input[name="exportSubjects"]').forEach(cb => cb.checked = status);
     }
 
-    // ✨ Canva 自由編輯器控制函數
     function setSlideTheme(themeClass) {
       const container = document.getElementById('printableReport');
       container.className = `${themeClass} p-6 sm:p-8 overflow-y-auto space-y-6 flex-1`;
@@ -1150,6 +1162,23 @@
 
       closeExportModal();
       document.getElementById('reportModal').classList.remove('hidden');
+    }
+
+    // 專用列印函數：複製所有簡報頁至獨立列印層，解決 Safari / Chrome 截斷頁數問題
+    function printSlides() {
+      let printArea = document.getElementById('printArea');
+      if (!printArea) {
+        printArea = document.createElement('div');
+        printArea.id = 'printArea';
+        printArea.style.display = 'none';
+        document.body.appendChild(printArea);
+      }
+
+      const reportEl = document.getElementById('printableReport');
+      printArea.className = reportEl.className.replace('overflow-y-auto', '').replace('p-6 sm:p-8', '');
+      printArea.innerHTML = reportEl.innerHTML;
+
+      window.print();
     }
 
     async function deleteLog(logId) {
