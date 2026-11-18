@@ -12,6 +12,7 @@
       #printableReport, #printableReport * { visibility: visible; }
       #printableReport { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
       .no-print { display: none !important; }
+      .editable-box { border: none !important; background: transparent !important; padding: 0 !important; }
     }
   </style>
 </head>
@@ -48,7 +49,7 @@
     <header class="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">🎓 自主學習歷程紀錄系統</h1>
-        <p class="text-xs text-slate-500 mt-1">紀錄每日學習，自動生成專屬學習歷程報告與時間軸</p>
+        <p class="text-xs text-slate-500 mt-1">紀錄每日學習，自動統整動機、過程與心得生成專屬學習歷程報告</p>
       </div>
 
       <div class="flex items-center gap-3 bg-indigo-50 px-3 py-2 rounded-xl border border-indigo-100">
@@ -76,7 +77,6 @@
               <input type="number" id="duration" min="1" placeholder="例如：60" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
             <div>
-              <!-- ✨ 新增：成績分數欄位 -->
               <label class="block text-xs font-bold text-slate-600 mb-1">小考/評量分數 (選填)</label>
               <input type="number" id="score" min="0" max="100" placeholder="例如：85" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
@@ -88,7 +88,7 @@
                 💡 帶入引導範本
               </button>
             </div>
-            <textarea id="content" rows="6" placeholder="今天學到了什麼概念？" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+            <textarea id="content" rows="6" placeholder="建議使用引導範本填寫，系統會自動幫你把內容轉化為完整的報告動機與心得！" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">成果照片網址 (選填)</label>
@@ -114,12 +114,11 @@
                 <div id="totalHours" class="text-2xl font-black">0 小時</div>
               </div>
               <div>
-                <!-- ✨ 新增：平均成績顯示 -->
                 <div class="text-xs text-indigo-200">平均評量分數</div>
                 <div id="avgScore" class="text-2xl font-black text-amber-300">-- 分</div>
               </div>
             </div>
-            <button onclick="openExportModal()" class="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2.5 rounded-xl shadow-md transition-all text-sm">📄 自訂生成學習歷程報告</button>
+            <button onclick="openExportModal()" class="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-4 py-2.5 rounded-xl shadow-md transition-all text-sm">📄 生成結構化歷程報告</button>
           </div>
 
           <!-- 每週目標與動態進度條區塊 -->
@@ -188,7 +187,6 @@
             <input type="number" id="editDuration" min="1" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
           </div>
           <div>
-            <!-- ✨ 編輯彈窗的成績欄位 -->
             <label class="block text-xs font-bold text-slate-600 mb-1">小考/評量分數 (選填)</label>
             <input type="number" id="editScore" min="0" max="100" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
           </div>
@@ -224,20 +222,25 @@
       </div>
 
       <div class="space-y-3">
-        <div class="flex justify-between items-center text-xs text-slate-500">
-          <span>請勾選欲產出之科目：</span>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">自訂報告主標題（選填）</label>
+          <input type="text" id="customReportTitle" placeholder="預設：自主學習歷程與成果反思報告" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <div class="flex justify-between items-center text-xs text-slate-500 pt-1">
+          <span>請勾選欲統整之科目：</span>
           <div>
             <button onclick="toggleAllExportCheck(true)" class="text-indigo-600 hover:underline mr-2">全選</button>
             <button onclick="toggleAllExportCheck(false)" class="text-slate-400 hover:underline">全不選</button>
           </div>
         </div>
 
-        <div id="exportSubjectList" class="space-y-2 max-h-48 overflow-y-auto border p-3 rounded-xl bg-slate-50"></div>
+        <div id="exportSubjectList" class="space-y-2 max-h-44 overflow-y-auto border p-3 rounded-xl bg-slate-50"></div>
       </div>
 
       <div class="flex gap-2 pt-2">
         <button onclick="closeExportModal()" class="w-1/2 bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-300">取消</button>
-        <button onclick="generatePDFReport()" class="w-1/2 bg-indigo-600 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700 shadow">開始生成報告</button>
+        <button onclick="generatePDFReport()" class="w-1/2 bg-indigo-600 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700 shadow">生成完整歷程報告</button>
       </div>
     </div>
   </div>
@@ -246,9 +249,12 @@
   <div id="reportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
       <div class="p-4 bg-slate-800 text-white flex justify-between items-center no-print">
-        <span class="text-sm font-semibold">📄 個人學習歷程報告</span>
+        <div>
+          <span class="text-sm font-semibold">📄 個人學習歷程報告（動機・過程・心得）</span>
+          <span class="block text-[11px] text-amber-300">💡 提示：點擊下方虛線框内的文字，可直接修改潤飾內容後再列印！</span>
+        </div>
         <div class="flex gap-2">
-          <button onclick="window.print()" class="bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">🖨️ 列印 / 另存 PDF</button>
+          <button onclick="window.print()" class="bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow">🖨️ 列印 / 另存 PDF</button>
           <button onclick="closeReportModal()" class="text-slate-400 hover:text-white font-bold px-2">✕</button>
         </div>
       </div>
@@ -257,6 +263,7 @@
   </div>
 
   <script>
+    // ⚠️ 請將此處替換為你自己的 Google Apps Script Web App 網址
     const API_URL = "https://script.google.com/macros/s/AKfycbyGp5SXGlgZXysFijKsKsQSTZsNMeXiOkvu18_1AYfRgJm8VYmhhbEpmV-b4MxnWY-P/exec";
 
     let currentMode = 'login';
@@ -413,7 +420,7 @@
 
       const script = document.createElement('script');
       script.id = 'jsonpScript';
-      script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&v=4&t=${Date.now()}`;
+      script.src = `${API_URL}?userName=${encodeURIComponent(currentUser)}&pinCode=${encodeURIComponent(currentPin)}&callback=handleApiResponse&v=5&t=${Date.now()}`;
       document.body.appendChild(script);
     }
 
@@ -490,23 +497,26 @@
       const filteredLogs = activeSubject === 'ALL' ? userLogs : userLogs.filter(log => log.subject === activeSubject);
       titleEl.innerText = `我的學習紀錄脈絡 (${activeSubject === 'ALL' ? '全部' : activeSubject})`;
 
-      if (filteredLogs.length === 0) {
-        container.innerHTML = `<div class="text-center py-8 text-slate-400">目前尚無【${activeSubject}】科目的學習紀錄！</div>`;
-        totalLogsEl.innerText = userLogs.length + " 筆";
-        return;
-      }
-
       let totalMinutes = 0;
+      userLogs.forEach(l => totalMinutes += Number(l.duration || 0));
+
       let scoreSum = 0;
       let scoreCount = 0;
-
-      userLogs.forEach(l => {
-        totalMinutes += Number(l.duration || 0);
+      filteredLogs.forEach(l => {
         if (l.score !== undefined && l.score !== "" && !isNaN(Number(l.score))) {
           scoreSum += Number(l.score);
           scoreCount++;
         }
       });
+
+      totalLogsEl.innerText = userLogs.length + " 筆";
+      totalHoursEl.innerText = (totalMinutes / 60).toFixed(1) + " 小時";
+      avgScoreEl.innerText = scoreCount > 0 ? (scoreSum / scoreCount).toFixed(1) + " 分" : "-- 分";
+
+      if (filteredLogs.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-400">目前尚無【${activeSubject}】科目的學習紀錄！</div>`;
+        return;
+      }
 
       const sortedLogs = [...filteredLogs].reverse();
 
@@ -542,10 +552,6 @@
           </div>
         `;
       }).join('');
-
-      totalLogsEl.innerText = userLogs.length + " 筆";
-      totalHoursEl.innerText = (totalMinutes / 60).toFixed(1) + " 小時";
-      avgScoreEl.innerText = scoreCount > 0 ? (scoreSum / scoreCount).toFixed(1) + " 分" : "-- 分";
     }
 
     function openEditModal(logId) {
@@ -672,6 +678,92 @@
       document.querySelectorAll('input[name="exportSubjects"]').forEach(cb => cb.checked = status);
     }
 
+    // ✨ 智慧解析筆記中的【學習目標】、【核心概念】、【困難】、【心得】，並合成為「動機・過程・心得」三大敘事段落
+    function buildStructuredNarratives(sortedLogs, selectedSubjects, totalHoursStr) {
+      let goals = [];
+      let concepts = [];
+      let challenges = [];
+      let reflections = [];
+      let rawNotes = [];
+      let scores = [];
+
+      sortedLogs.forEach(log => {
+        if (log.score !== undefined && log.score !== "" && !isNaN(Number(log.score))) {
+          scores.push({ date: log.date, score: Number(log.score), subject: log.subject });
+        }
+
+        const text = String(log.content || "").trim();
+        // 嘗試解析引導範本的區塊
+        const goalMatch = text.match(/【學習目標】([\s\S]*?)(?=【|$)/);
+        const conceptMatch = text.match(/【核心概念與重點整理】([\s\S]*?)(?=【|$)/);
+        const challengeMatch = text.match(/【遇到的困難與解決方式】([\s\S]*?)(?=【|$)/);
+        const reflectionMatch = text.match(/【心得與反思】([\s\S]*?)(?=【|$)/);
+
+        const cleanBullets = (str) => str ? str.replace(/•/g, '').split('\n').map(s => s.trim()).filter(Boolean) : [];
+
+        const gList = cleanBullets(goalMatch ? goalMatch[1] : '');
+        const cList = cleanBullets(conceptMatch ? conceptMatch[1] : '');
+        const chList = cleanBullets(challengeMatch ? challengeMatch[1] : '');
+        const rList = cleanBullets(reflectionMatch ? reflectionMatch[1] : '');
+
+        if (gList.length || cList.length || chList.length || rList.length) {
+          goals.push(...gList);
+          concepts.push(...cList);
+          challenges.push(...chList);
+          reflections.push(...rList);
+        } else if (text) {
+          // 若使用者沒有用範本而是自由書寫，保留精華句
+          rawNotes.push(`「${text.replace(/\n+/g, '；')}」`);
+        }
+      });
+
+      const startDate = sortedLogs[0].date ? new Date(sortedLogs[0].date).toLocaleDateString("zh-TW") : "本學期初";
+      const endDate = sortedLogs[sortedLogs.length - 1].date ? new Date(sortedLogs[sortedLogs.length - 1].date).toLocaleDateString("zh-TW") : "近期";
+      const subjectStr = selectedSubjects.join("、");
+
+      // 1. 生成【學習動機】
+      let motivationText = `為了深化在「${subjectStr}」領域的專業知識與自主探究能力，我自 ${startDate} 起規劃了系統性的自主學習計畫。`;
+      if (goals.length > 0) {
+        motivationText += `在規劃初期，我為自己設定了明確的階段性學習目標，期望能夠達成以下重點：${goals.slice(0, 4).join("、")}。透過有節奏的自我督促與紀錄，期許將課堂所學轉化為實際解決問題的能力。`;
+      } else {
+        motivationText += `面對知識快速演進的時代，我希望不再只是被動接收課本內容，而是透過主動設定進度、定期檢核成效的方式，培養獨立思考與長期累積的學習習慣。`;
+      }
+
+      // 2. 生成【學習過程與策略】
+      let processText = `在 ${startDate} 至 ${endDate} 期間，我共進行了 ${sortedLogs.length} 個階段的深度學習，累積投入 ${totalHoursStr} 小時。`;
+      if (concepts.length > 0) {
+        processText += `\n在知識建構的過程中，我逐步掌握了${concepts.slice(0, 5).join("、")}等核心概念，並透過動手實作與筆記整理來內化所學。`;
+      } else if (rawNotes.length > 0) {
+        processText += `\n期間我透過反覆練習與重點摘錄推進進度，例如在各階段中深入鑽研了${rawNotes.slice(0, 3).join("，以及")}等實務內容。`;
+      }
+
+      if (challenges.length > 0) {
+        processText += `\n學習過程中並非一帆風順，我也曾面臨「${challenges.slice(0, 3).join("；")}」等瓶頸。面對這些困難，我透過拆解問題、查閱資料與反覆除錯修正，最終順利突破盲點。`;
+      }
+
+      if (scores.length > 0) {
+        const avg = (scores.reduce((acc, cur) => acc + cur.score, 0) / scores.length).toFixed(1);
+        const firstScore = scores[0].score;
+        const lastScore = scores[scores.length - 1].score;
+        if (scores.length >= 2 && lastScore > firstScore) {
+          processText += `\n此外，透過階段性評量檢視成效，我的評量成績從最初的 ${firstScore} 分穩定提升至 ${lastScore} 分（平均 ${avg} 分），印證了自主學習策略的具體成效。`;
+        } else {
+          processText += `\n在階段性評量檢核中，我也取得了平均 ${avg} 分的表現，藉此客觀檢視自己對知識點的掌握程度。`;
+        }
+      }
+
+      // 3. 生成【心得感想與未來展望】
+      let reflectionText = `回顧這段累積 ${totalHoursStr} 小時的自主學習歷程，我深刻體會到「持續累積」與「系統化復盤」的重要性。`;
+      if (reflections.length > 0) {
+        reflectionText += `從每次的學習反思中，我獲得了許多寶貴體悟：${reflections.slice(0, 4).join("；")}。這些經驗讓我明白，遇到瓶頸時保持耐心並尋找方法，往往是成長最快的時候。`;
+      } else {
+        reflectionText += `將抽象概念化為具體筆記與成果的過程，不僅提升了我的時間管理與自律能力，也讓我對「${subjectStr}」產生更濃厚的探究熱忱。`;
+      }
+      reflectionText += `\n展望未來，我計畫將本次所學的知識架構延伸應用到更進階的專題實作中，持續保持主動探索的學習態度，迎接下一個階段的挑戰。`;
+
+      return { motivationText, processText, reflectionText };
+    }
+
     function generatePDFReport() {
       const selectedSubjects = Array.from(document.querySelectorAll('input[name="exportSubjects"]:checked')).map(cb => cb.value);
 
@@ -680,6 +772,7 @@
         return;
       }
 
+      const customTitle = document.getElementById('customReportTitle').value.trim() || "自主學習歷程與成果反思報告";
       const filteredLogs = userLogs.filter(log => selectedSubjects.includes(log.subject));
       const sortedLogs = [...filteredLogs].sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -691,6 +784,9 @@
         totalMinutes += mins;
         subjectStats[log.subject] = (subjectStats[log.subject] || 0) + mins;
       });
+
+      const totalHoursStr = (totalMinutes / 60).toFixed(1);
+      const { motivationText, processText, reflectionText } = buildStructuredNarratives(sortedLogs, selectedSubjects, totalHoursStr);
 
       let subjectHtml = Object.keys(subjectStats).map(sub => {
         const mins = subjectStats[sub];
@@ -710,7 +806,7 @@
         const scoreStr = (log.score !== undefined && log.score !== "") ? ` | 評量成績：<span class="font-bold text-amber-600">${log.score}分</span>` : '';
 
         return `
-          <div class="border-l-2 border-indigo-400 pl-4 py-2 relative">
+          <div class="border-l-2 border-indigo-400 pl-4 py-2 relative break-inside-avoid">
             <div class="absolute -left-[5px] top-3.5 w-2 h-2 rounded-full bg-indigo-600"></div>
             <div class="flex justify-between items-center text-xs text-slate-400 mb-1">
               <span class="font-bold text-indigo-700">第 ${index + 1} 階段 • ${dateStr}</span>
@@ -727,20 +823,40 @@
       document.getElementById('printableReport').innerHTML = `
         <div class="border-b-2 border-indigo-600 pb-4 mb-6 flex justify-between items-end">
           <div>
-            <h1 class="text-2xl font-black text-slate-900">自主學習歷程與總複習成果報告</h1>
+            <h1 class="text-2xl font-black text-slate-900">${customTitle}</h1>
             <p class="text-xs text-slate-500 mt-1">學習者：<span class="text-indigo-600 font-bold text-sm">${currentUser}</span> | 包含科目：${selectedSubjects.join("、")} | 產出日期：${new Date().toLocaleDateString("zh-TW")}</p>
           </div>
           <div class="text-right">
-            <span class="text-xs text-slate-400 block">選取科目總投入時間</span>
-            <span class="text-xl font-bold text-indigo-600">${(totalMinutes / 60).toFixed(1)} 小時</span>
+            <span class="text-xs text-slate-400 block">總投入時間</span>
+            <span class="text-xl font-bold text-indigo-600">${totalHoursStr} 小時</span>
           </div>
         </div>
-        <div class="mb-6">
-          <h3 class="text-sm font-bold text-slate-700 mb-3">📊 科目學習時間分配摘要</h3>
+
+        <!-- ✨ 新增：備審規格三大敘事章節（支援點擊直接微調潤飾） -->
+        <div class="space-y-4 mb-6">
+          <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+            <h3 class="text-base font-bold text-indigo-900 mb-2 flex items-center gap-1.5">一、學習動機與目標設定</h3>
+            <div contenteditable="true" class="editable-box text-sm text-slate-700 leading-relaxed whitespace-pre-line border border-dashed border-indigo-300 bg-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">${motivationText}</div>
+          </div>
+
+          <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+            <h3 class="text-base font-bold text-indigo-900 mb-2 flex items-center gap-1.5">二、學習過程與問題解決策略</h3>
+            <div contenteditable="true" class="editable-box text-sm text-slate-700 leading-relaxed whitespace-pre-line border border-dashed border-indigo-300 bg-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">${processText}</div>
+          </div>
+
+          <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+            <h3 class="text-base font-bold text-indigo-900 mb-2 flex items-center gap-1.5">三、心得感想與未來展望</h3>
+            <div contenteditable="true" class="editable-box text-sm text-slate-700 leading-relaxed whitespace-pre-line border border-dashed border-indigo-300 bg-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">${reflectionText}</div>
+          </div>
+        </div>
+
+        <div class="mb-6 break-inside-avoid">
+          <h3 class="text-sm font-bold text-slate-700 mb-3">📊 科目學習時間分配統計</h3>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${subjectHtml}</div>
         </div>
+
         <div>
-          <h3 class="text-sm font-bold text-slate-700 mb-3">📌 按時間軸排定之單元學習與複習脈絡</h3>
+          <h3 class="text-sm font-bold text-slate-700 mb-3">📌 佐證資料：各階段詳細學習紀錄時間軸</h3>
           <div class="space-y-3">${timelineHtml}</div>
         </div>
       `;
